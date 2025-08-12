@@ -218,14 +218,14 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
         <label>Pay Oranı (kayıt için, % - opsiyonel) <input type="number" name="shareOverride" min="0" max="100" step="1" /></label>
       </div>
       <label>Süre (dakika) <input type="number" name="duration" min="15" step="15" placeholder="60" /></label>
-<div class="card" style="background:#0f1320;border:1px dashed var(--border)">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap">
-    <strong>Tekil Ders Tarihleri (opsiyonel, en fazla 4)</strong>
-    <button class="btn-outline" type="button" id="addSession">+ Tarih/Saat Ekle</button>
-  </div>
-  <div id="sessionList" class="session-list" style="display:grid;gap:.5rem;margin-top:.5rem"></div>
-  <small class="muted">Her satıra tarih& saat ekleyin. Süre boşsa kayıt süresi (dakika) kullanılır.</small>
-</div>
+      <div class="card" style="background:#0f1320;border:1px dashed var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap">
+          <strong>Tekil Ders Tarihleri (opsiyonel, en fazla 4)</strong>
+          <button class="btn-outline" type="button" id="addSession">+ Tarih/Saat Ekle</button>
+        </div>
+        <div id="sessionList" class="session-list" style="display:grid;gap:.5rem;margin-top:.5rem"></div>
+        <small class="muted">Her satıra tarih & saat ekleyin. Süre boşsa kayıt süresi (dakika) kullanılır.</small>
+      </div>
       <label>Gün/Saat <input name="schedule" placeholder="Örn: Salı 17:00"/></label>
       <menu>
         <button class="btn-outline" type="button" data-close>Vazgeç</button>
@@ -266,12 +266,12 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    console.log('DPSA v14 init start');
+    console.log('DPSA v14.1 init start');
 
 console.log('DPSA app.js v11 loaded');
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-const uid = () => ('id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 const TL = n => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(Number(n||0));
 $('#year').textContent = new Date().getFullYear();
 
@@ -299,7 +299,7 @@ function showPage(hash){
   renderAll();
 }
 window.addEventListener('hashchange', ()=>showPage(location.hash));
-// init postponed; will run after all declarations. /*__DELAYED__*/
+showPage(location.hash||'#students');
 
 /* UX: dialog close on backdrop + ESC + data-close */
 function closeDialogOnBackdrop(dlg){
@@ -527,8 +527,7 @@ function renderEnrollments(){
 }
 function openEnroll(data){
   const dlg=$('#enrollModal'), f=$('#enrollForm'); f.reset(); renderEnrollmentOptions();
-  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); f.duration.value=(data.duration ?? 60); fillSessions(data.sessions||[]); } else { fillSessions([]); }
-  else { f.id.value=''; }
+  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); }
   dlg.showModal();
 }
 $('#enrollForm').addEventListener('submit', (e)=>{
@@ -678,53 +677,46 @@ function parseSchedule(s){
 }
 
 function renderCalendar(){
-  // Header
-  const header = $('#calHeader');
-  const grid = $('#calendar');
+  const header = document.getElementById('calHeader');
+  const grid = document.getElementById('calendar');
   if(!header || !grid) return;
   const start = new Date(calWeekStart);
   const end = new Date(calWeekStart); end.setDate(end.getDate()+6);
-  $('#calRange').textContent = `${fmtDate(start)} – ${fmtDate(end)}`;
+  document.getElementById('calRange').textContent = `${fmtDate(start)} – ${fmtDate(end)}`;
 
-  // Build header row
-  const days = [null]; // first blank for time col
+  const days = [null];
   for(let i=0;i<7;i++){
     const d = new Date(start); d.setDate(start.getDate()+i);
     days.push(`<div class="cell">${DAY_NAMES[i]} ${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}</div>`);
   }
   header.innerHTML = days.join('');
 
-  // Build grid: time column + 7 day columns
-  const HSTART=8, HEND=22, H=48; // 8:00-22:00, 48px per hour
+  const HSTART=8, HEND=22, H=48;
   let timeCol = '<div class="cal-timecol">';
   for(let h=HSTART; h<=HEND; h++){ timeCol += `<div class="cal-time">${String(h).padStart(2,'0')}:00</div>`; }
   timeCol += '</div>';
   const dayCols = [];
   for(let i=0;i<7;i++){
     let col = '<div class="cal-day" style="height:' + ((HEND-HSTART+1)*H) + 'px">';
-    // hour grid background
     for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
-    // events for this day
-    // For each enrollment, if schedule matches this dow, place event
     for(const e of db.enrollments){
-      // Sessions first: exact dates
-      const sessions = (e.sessions||[]).map(s=>{ try{ return new Date(s.dt) }catch(_){ return null } }).filter(Boolean);
-      for(const sd of sessions){
-        const d = new Date(start); d.setDate(start.getDate()+i);
-        if(sd.getFullYear()===d.getFullYear() && sd.getMonth()===d.getMonth() && sd.getDate()===d.getDate()){
-          const dur = Number(s.duration || e.duration || 60);
-          const top = ((sd.getHours() - HSTART) * H) + (sd.getMinutes()/60)*H;
-          const height = Math.max(24, H * (dur/60));
+      // Sessions (exact dates)
+      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur: (s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
+      for(const s of sessions){
+        const test = new Date(start); test.setDate(start.getDate()+i);
+        if(s.d.getFullYear()===test.getFullYear() && s.d.getMonth()===test.getMonth() && s.d.getDate()===test.getDate()){
+          const top = ((s.d.getHours() - HSTART) * H) + (s.d.getMinutes()/60)*H;
+          const height = Math.max(24, H * (Number(s.dur)/60));
           const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
           const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
           const cou = byId(db.courses, e.courseId)?.title || 'Ders';
           col += `<div class="event" style="top:${top}px;height:${height}px">
             <div class="title">${stu} <span class="badge">${cou}</span></div>
-            <div class="meta">${tea} · ${String(sd.getHours()).padStart(2,'0')}:${String(sd.getMinutes()).padStart(2,'0')}</div>
+            <div class="meta">${tea} · ${String(s.d.getHours()).padStart(2,'0')}:${String(s.d.getMinutes()).padStart(2,'0')}</div>
           </div>`;
         }
       }
-      // Then recurring schedule if provided
+      // Recurring schedule
       const parsed = parseSchedule(e.schedule);
       if(parsed && parsed.dow===i){
         const dur = Number(e.duration||60);
@@ -744,24 +736,21 @@ function renderCalendar(){
   }
   grid.innerHTML = timeCol + dayCols.join('');
 }
-$('#calPrev')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()-7); renderCalendar(); });
-$('#calNext')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()+7); renderCalendar(); });
-$('#calToday')?.addEventListener('click', ()=>{ calWeekStart = getMonday(new Date()); renderCalendar(); });
+document.getElementById('calPrev')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()-7); renderCalendar(); });
+document.getElementById('calNext')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()+7); renderCalendar(); });
+document.getElementById('calToday')?.addEventListener('click', ()=>{ calWeekStart = getMonday(new Date()); renderCalendar(); });
 
-// Re-render calendar whenever data changes
+// Hook into renderAll
 const _renderAll = renderAll;
-renderAll = function(){
-  _renderAll();
-  renderCalendar();
-};
+renderAll = function(){ _renderAll(); renderCalendar(); };
 
-    console.log('DPSA v14 init done');
+    if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
+    console.log('DPSA v14.1 init done');
   } catch(err) {
-    console.error('DPSA v13 init error:', err);
+    console.error('DPSA v14.1 init error:', err);
   }
 });
 
-showPage(location.hash||'#students');
 </script>
 </body>
 </html>
