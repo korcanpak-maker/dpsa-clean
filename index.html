@@ -764,7 +764,7 @@ renderAll = function(){ _renderAll(); renderCalendar(); };
     console.log('DPSA v14.1 init done');
 
 // === Calendar v15 (week/month) ===
-let calMode = 'week';
+var calMode = 'week';
 let calRefDate = new Date(); // reference date for both modes
 function setMode(m){
   calMode = m;
@@ -937,6 +937,7 @@ document.getElementById('calToday')?.addEventListener('click', ()=>{
 });
 
 // Initial render
+if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
 setTimeout(()=> renderCalendar(), 0);
 
   } catch(err) {
