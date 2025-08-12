@@ -237,6 +237,10 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 
   <script>
 
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    console.log('DPSA v12 init start');
+
 console.log('DPSA app.js v11 loaded');
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
@@ -581,6 +585,12 @@ document.addEventListener('click', (e)=>{
   if(id==='courseModal') return openCourse();
   if(id==='enrollModal') return openEnroll();
   if(id==='paymentModal') return openPayment();
+});
+
+    console.log('DPSA v12 init done');
+  } catch(err) {
+    console.error('DPSA v12 init error:', err);
+  }
 });
 
 </script>
