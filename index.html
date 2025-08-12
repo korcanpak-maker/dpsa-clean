@@ -55,6 +55,22 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 .event .meta{opacity:.8}
 .badge{display:inline-block;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:0 .3rem;margin-left:.3rem;font-size:.7rem}
 
+
+/* Calendar improvements */
+.cal-mode{display:flex;gap:.25rem;margin-right:.5rem}
+.cal-mode .active{background:rgba(79,140,255,.15);border-color:rgba(79,140,255,.6)}
+.event{min-height:36px;display:flex;flex-direction:column;justify-content:center}
+.event .title,.event .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.event .meta{font-size:.72rem}
+/* Month grid */
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0}
+.month-header .cell{background:#0f1320;color:var(--muted);padding:.5rem;font-weight:700;font-size:.85rem;text-align:center}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+.month-cell{background:#0f1320;min-height:120px;position:relative;padding:.35rem}
+.month-cell .mday{position:absolute;top:4px;right:6px;color:var(--muted);font-size:.75rem}
+.pill{display:block;border:1px solid rgba(79,140,255,.5);background:rgba(79,140,255,.15);border-radius:6px;padding:2px 4px;margin-top:2px;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width: 900px){ .month-cell{min-height:90px} }
+
 </style>
 </head>
 <body>
@@ -79,7 +95,7 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
     <section id="dashboard" class="page hidden">
       <h2>Yönetim Paneli</h2>
       <div id="stats" class="stats"></div>
-<div class="card calendar-card"><div class="cal-head"><h3>Haftalık Takvim</h3><div class="cal-controls"><button class="btn-outline" id="calPrev">←</button><div id="calRange" class="cal-range"></div><button class="btn-outline" id="calNext">→</button><button class="btn-outline" id="calToday">Bugün</button></div></div><div class="cal-header" id="calHeader"></div><div class="calendar" id="calendar"></div><small class="muted">Format örneği: <b>Salı 17:00</b>. Süre belirtilmezse 60 dk kabul edilir.</small></div>
+<div class="card calendar-card"><div class="cal-head"><h3>Haftalık Takvim</h3><div class="cal-controls"><div class="cal-mode"><button class="btn-outline active" id="modeWeek">Hafta</button><button class="btn-outline" id="modeMonth">Ay</button></div><button class="btn-outline" id="calPrev">←</button><div id="calRange" class="cal-range"></div><button class="btn-outline" id="calNext">→</button><button class="btn-outline" id="calToday">Bugün</button></div></div><div class="cal-header" id="calHeader"></div><div class="calendar" id="calendar"></div><small class="muted">Format örneği: <b>Salı 17:00</b>. Süre belirtilmezse 60 dk kabul edilir.</small></div>
       <div class="card">
         <h3>Bu ay</h3>
         <div id="financeSummary"></div>
@@ -746,6 +762,183 @@ renderAll = function(){ _renderAll(); renderCalendar(); };
 
     if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
     console.log('DPSA v14.1 init done');
+
+// === Calendar v15 (week/month) ===
+let calMode = 'week';
+let calRefDate = new Date(); // reference date for both modes
+function setMode(m){
+  calMode = m;
+  document.getElementById('modeWeek')?.classList.toggle('active', m==='week');
+  document.getElementById('modeMonth')?.classList.toggle('active', m==='month');
+  renderCalendar();
+}
+function fmtMonthYear(d){
+  try{ return d.toLocaleDateString('tr-TR', {month:'long', year:'numeric'}); }catch(_){
+    return `${d.getMonth()+1}.${d.getFullYear()}`;
+  }
+}
+function fmtTime(h,m){ return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+
+function renderCalendar(){
+  const startLabel = document.getElementById('calRange');
+  if(calMode==='week'){
+    renderWeek();
+    const s = getMonday(new Date(calRefDate));
+    const e = new Date(s); e.setDate(e.getDate()+6);
+    startLabel.textContent = `${String(s.getDate()).padStart(2,'0')}.${String(s.getMonth()+1).padStart(2,'0')} – ${String(e.getDate()).padStart(2,'0')}.${String(e.getMonth()+1).padStart(2,'0')}`;
+  } else {
+    renderMonth();
+    startLabel.textContent = fmtMonthYear(new Date(calRefDate));
+  }
+}
+document.getElementById('modeWeek')?.addEventListener('click', ()=> setMode('week'));
+document.getElementById('modeMonth')?.addEventListener('click', ()=> setMode('month'));
+
+function renderWeek(){
+  const header = document.getElementById('calHeader');
+  const grid = document.getElementById('calendar');
+  if(!header || !grid) return;
+  grid.style.display='grid';
+  header.style.display='grid';
+  // Build header row
+  const start = getMonday(new Date(calRefDate));
+  const DAY_NAMES = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const days = [null];
+  for(let i=0;i<7;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    days.push(`<div class="cell">${DAY_NAMES[i]} ${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}</div>`);
+  }
+  header.innerHTML = days.join('');
+
+  // Build grid
+  const HSTART=8, HEND=22, H=48;
+  let timeCol = '<div class="cal-timecol">';
+  for(let h=HSTART; h<=HEND; h++){ timeCol += `<div class="cal-time">${String(h).padStart(2,'0')}:00</div>`; }
+  timeCol += '</div>';
+  const dayCols = [];
+  for(let i=0;i<7;i++){
+    let col = '<div class="cal-day" style="height:' + ((HEND-HSTART+1)*H) + 'px">';
+    for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
+    for(const e of db.enrollments){
+      // sessions
+      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur:(s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
+      for(const s of sessions){
+        const base = new Date(start); base.setDate(start.getDate()+i);
+        if(s.d.getFullYear()===base.getFullYear() && s.d.getMonth()===base.getMonth() && s.d.getDate()===base.getDate()){
+          const top = ((s.d.getHours()-HSTART)*H) + (s.d.getMinutes()/60)*H;
+          const height = Math.max(36, H*(Number(s.dur)/60));
+          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+          const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
+          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+          col += `<div class="event" style="top:${top}px;height:${height}px">
+            <div class="title">${stu} <span class="badge">${cou}</span></div>
+            <div class="meta">${tea} · ${fmtTime(s.d.getHours(), s.d.getMinutes())}</div>
+          </div>`;
+        }
+      }
+      // recurring
+      const parsed = parseSchedule(e.schedule);
+      if(parsed){
+        const d = new Date(start); d.setDate(start.getDate()+i);
+        if(parsed.dow === ((d.getDay()+6)%7)){
+          const dur = Number(e.duration||60);
+          const top = ((parsed.hh - HSTART) * H) + (parsed.mm/60)*H;
+          const height = Math.max(36, H*(dur/60));
+          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+          const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
+          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+          col += `<div class="event" style="top:${top}px;height:${height}px">
+            <div class="title">${stu} <span class="badge">${cou}</span></div>
+            <div class="meta">${tea} · ${fmtTime(parsed.hh, parsed.mm)}</div>
+          </div>`;
+        }
+      }
+    }
+    col += '</div>';
+    dayCols.push(col);
+  }
+  grid.innerHTML = timeCol + dayCols.join('');
+  // hide month header/grid if present
+  document.getElementById('monthHeader')?.remove();
+  document.getElementById('monthGrid')?.remove();
+}
+
+function renderMonth(){
+  const container = document.getElementById('calendar');
+  const header = document.getElementById('calHeader');
+  if(!container || !header) return;
+  // Hide week grid headers
+  container.innerHTML = '';
+  header.innerHTML = '';
+  header.style.display='none';
+  container.style.display='block';
+
+  // Build month header
+  const DAY_NAMES = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const mh = document.createElement('div'); mh.id='monthHeader'; mh.className='month-header';
+  for(let i=0;i<7;i++){ mh.innerHTML += `<div class="cell">${DAY_NAMES[i]}</div>`; }
+  header.parentNode.insertBefore(mh, container);
+
+  // Start from first Monday shown in grid
+  const first = new Date(calRefDate.getFullYear(), calRefDate.getMonth(), 1);
+  const start = getMonday(first);
+  const grid = document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
+
+  for(let i=0;i<42;i++){ // 6 weeks
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const cell = document.createElement('div'); cell.className='month-cell';
+    const dayNum = d.getDate();
+    const inMonth = d.getMonth()===calRefDate.getMonth();
+    cell.innerHTML = `<div class="mday" style="opacity:${inMonth?1:.5}">${String(dayNum).padStart(2,'0')}</div>`;
+
+    // events
+    for(const e of db.enrollments){
+      // sessions
+      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur:(s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
+      for(const s of sessions){
+        if(s.d.getFullYear()===d.getFullYear() && s.d.getMonth()===d.getMonth() && s.d.getDate()===d.getDate()){
+          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+          const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
+          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+          const t = fmtTime(s.d.getHours(), s.d.getMinutes());
+          cell.innerHTML += `<span class="pill">${t} · ${stu} <span class="badge">${cou}</span></span>`;
+        }
+      }
+      // recurring
+      const parsed = parseSchedule(e.schedule);
+      if(parsed){
+        // map JS day to our 0=Mon..6=Sun
+        const dow = (d.getDay()+6)%7;
+        if(parsed.dow===dow){
+          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+          const t = fmtTime(parsed.hh, parsed.mm);
+          cell.innerHTML += `<span class="pill">${t} · ${stu} <span class="badge">${cou}</span></span>`;
+        }
+      }
+    }
+    grid.appendChild(cell);
+  }
+  container.parentNode.insertBefore(grid, container.nextSibling);
+}
+
+document.getElementById('calPrev')?.addEventListener('click', ()=>{
+  if(calMode==='week'){ calRefDate.setDate(calRefDate.getDate()-7); }
+  else { calRefDate.setMonth(calRefDate.getMonth()-1); }
+  renderCalendar();
+});
+document.getElementById('calNext')?.addEventListener('click', ()=>{
+  if(calMode==='week'){ calRefDate.setDate(calRefDate.getDate()+7); }
+  else { calRefDate.setMonth(calRefDate.getMonth()+1); }
+  renderCalendar();
+});
+document.getElementById('calToday')?.addEventListener('click', ()=>{
+  calRefDate = new Date(); renderCalendar();
+});
+
+// Initial render
+setTimeout(()=> renderCalendar(), 0);
+
   } catch(err) {
     console.error('DPSA v14.1 init error:', err);
   }
