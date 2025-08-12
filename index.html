@@ -258,12 +258,12 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    console.log('DPSA v13 init start');
+    console.log('DPSA v13.4 init start');
 
 console.log('DPSA app.js v11 loaded');
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-const uid = () => Math.random().toString(36).slice(2,10);
+const uid = () => ('id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
 const TL = n => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(Number(n||0));
 $('#year').textContent = new Date().getFullYear();
 
@@ -487,12 +487,14 @@ function renderEnrollments(){
 function openEnroll(data){
   const dlg=$('#enrollModal'), f=$('#enrollForm'); f.reset(); renderEnrollmentOptions();
   if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); f.duration.value=(data.duration ?? 60); }
+  else { f.id.value=''; }
   dlg.showModal();
 }
 $('#enrollForm').addEventListener('submit', (e)=>{
   e.preventDefault();
   const f=e.target;
-  const item={ id:f.id.value||uid(), studentId:f.studentId.value, teacherId:f.teacherId.value, courseId:f.courseId.value, startDate:f.startDate.value, schedule:f.schedule.value.trim(), shareOverride: f.shareOverride.value===''? null : Number(f.shareOverride.value), duration: f.duration.value===''? 60 : Number(f.duration.value) };
+  const newId = (f.id.value && f.id.value.trim()) ? f.id.value.trim() : uid();
+  const item={ id:newId, studentId:f.studentId.value, teacherId:f.teacherId.value, courseId:f.courseId.value, startDate:f.startDate.value, schedule:f.schedule.value.trim(), shareOverride: f.shareOverride.value===''? null : Number(f.shareOverride.value), duration: f.duration.value===''? 60 : Number(f.duration.value) };
   const i=db.enrollments.findIndex(x=>x.id===item.id);
   if(i>-1) db.enrollments[i]=item; else db.enrollments.push(item);
   store.save(db); $('#enrollModal').close('submit'); renderAll();
@@ -693,19 +695,13 @@ renderAll = function(){
   renderCalendar();
 };
 
-    console.log('DPSA v13 init done');
+    console.log('DPSA v13.4 init done');
   } catch(err) {
     console.error('DPSA v13 init error:', err);
   }
 });
 
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  try{ if (typeof showPage === 'function') { showPage(location.hash||'#dashboard'); } }catch(e){ console.error(e); }
-});
+showPage(location.hash||'#students');
 </script>
 </body>
 </html>
-
