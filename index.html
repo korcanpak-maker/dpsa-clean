@@ -291,7 +291,7 @@ function showPage(hash){
   renderAll();
 }
 window.addEventListener('hashchange', ()=>showPage(location.hash));
-showPage(location.hash||'#students');
+// init postponed; will run after all declarations. /*__DELAYED__*/
 
 /* UX: dialog close on backdrop + ESC + data-close */
 function closeDialogOnBackdrop(dlg){
@@ -309,7 +309,7 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Helpers */
-const byId = (arr, id) => arr.find(x => x.id === id);
+function byId(arr, id){ return (arr||[]).find(x=>x.id===id); }
 function table(headers, rows){
   return `<table class="table">
     <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
@@ -699,6 +699,7 @@ renderAll = function(){
   }
 });
 
+showPage(location.hash||'#students');
 </script>
 </body>
 </html>
