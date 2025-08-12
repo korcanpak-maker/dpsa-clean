@@ -699,7 +699,13 @@ renderAll = function(){
   }
 });
 
-showPage(location.hash||'#students');
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try{ if (typeof showPage === 'function') { showPage(location.hash||'#dashboard'); } }catch(e){ console.error(e); }
+});
 </script>
 </body>
 </html>
+
