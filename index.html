@@ -55,6 +55,22 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 .event .meta{opacity:.8}
 .badge{display:inline-block;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:0 .3rem;margin-left:.3rem;font-size:.7rem}
 
+
+/* Month/Week Toggle + Layout */
+.cal-mode{display:flex;gap:.25rem;margin-right:.5rem}
+.cal-mode .active{background:rgba(79,140,255,.15);border-color:rgba(79,140,255,.6)}
+.event{min-height:36px;display:flex;flex-direction:column;justify-content:center}
+.event .title,.event .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.event .meta{font-size:.72rem}
+/* Month grid */
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0}
+.month-header .cell{background:#0f1320;color:var(--muted);padding:.5rem;font-weight:700;font-size:.85rem;text-align:center}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+.month-cell{background:#0f1320;min-height:120px;position:relative;padding:.35rem}
+.month-cell .mday{position:absolute;top:4px;right:6px;color:var(--muted);font-size:.75rem}
+.pill{display:block;border:1px solid rgba(79,140,255,.5);background:rgba(79,140,255,.15);border-radius:6px;padding:2px 4px;margin-top:2px;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width: 900px){ .month-cell{min-height:90px} }
+
 </style>
 </head>
 <body>
@@ -79,7 +95,7 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
     <section id="dashboard" class="page hidden">
       <h2>Yönetim Paneli</h2>
       <div id="stats" class="stats"></div>
-<div class="card calendar-card"><div class="cal-head"><h3>Haftalık Takvim</h3><div class="cal-controls"><button class="btn-outline" id="calPrev">←</button><div id="calRange" class="cal-range"></div><button class="btn-outline" id="calNext">→</button><button class="btn-outline" id="calToday">Bugün</button></div></div><div class="cal-header" id="calHeader"></div><div class="calendar" id="calendar"></div><small class="muted">Format örneği: <b>Salı 17:00</b>. Süre belirtilmezse 60 dk kabul edilir.</small></div>
+<div class="card calendar-card"><div class="cal-head"><h3>Haftalık Takvim</h3><div class="cal-controls"><div class="cal-mode"><button class="btn-outline active" id="modeWeek">Hafta</button><button class="btn-outline" id="modeMonth">Ay</button></div><button class="btn-outline" id="calPrev">←</button><div id="calRange" class="cal-range"></div><button class="btn-outline" id="calNext">→</button><button class="btn-outline" id="calToday">Bugün</button></div></div><div class="cal-header" id="calHeader"></div><div class="calendar" id="calendar"></div><small class="muted">Format örneği: <b>Salı 17:00</b>. Süre belirtilmezse 60 dk kabul edilir.</small></div>
       <div class="card">
         <h3>Bu ay</h3>
         <div id="financeSummary"></div>
@@ -701,7 +717,7 @@ function renderCalendar(){
     for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
     for(const e of db.enrollments){
       // Sessions (exact dates)
-      const sessions = (e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur: (s.duration ?? e.duration ?? 60) } }).filter(Boolean);
+      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur: (s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
       for(const s of sessions){
         const test = new Date(start); test.setDate(start.getDate()+i);
         if(s.d.getFullYear()===test.getFullYear() && s.d.getMonth()===test.getMonth() && s.d.getDate()===test.getDate()){
@@ -744,82 +760,187 @@ document.getElementById('calToday')?.addEventListener('click', ()=>{ calWeekStar
 const _renderAll = renderAll;
 renderAll = function(){ _renderAll(); renderCalendar(); };
 
-    
-(function(){
-// ===== Calendar v15.3 (week/month) =====
-var calMode = 'week';
-var calRefDate = new Date();
-
-function fmt2(n){ return String(n).padStart(2,'0'); }
-function fmtTime(h,m){ return fmt2(h)+':'+fmt2(m); }
-function getMonday(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
-const DAY_SHORT = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-const CAL_DAY_MAP = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
-function parseSchedule(s){
-  if(!s) return null;
-  let t=(s+'').toLowerCase().replace(/\./g,':').trim(), dow=null;
-  for(const k in CAL_DAY_MAP){ if(t.includes(k)){ dow=CAL_DAY_MAP[k]; break; } }
-  const m=t.match(/(\d{1,2})[:](\d{2})/) || t.match(/(\d{1,2})\s*$/);
-  let hh=17, mm=0; if(m){ hh=Number(m[1]); mm=Number(m[2]||0); }
-  return dow==null? null : {dow,hh,mm};
-}
-function setMode(m){
-  calMode=m;
-  document.getElementById('modeWeek')?.classList.toggle('active', m==='week');
-  document.getElementById('modeMonth')?.classList.toggle('active', m==='month');
-  renderCalendar();
-}
-document.addEventListener('click', (e)=>{
-  if(e.target?.id==='modeWeek') setMode('week');
-  if(e.target?.id==='modeMonth') setMode('month');
-});
-document.getElementById('calPrev')?.addEventListener('click', ()=>{ calRefDate.setDate(calRefDate.getDate() + (calMode==='week'?-7: -30)); renderCalendar(); });
-document.getElementById('calNext')?.addEventListener('click', ()=>{ calRefDate.setDate(calRefDate.getDate() + (calMode==='week'?+7:+30)); renderCalendar(); });
-document.getElementById('calToday')?.addEventListener('click', ()=>{ calRefDate=new Date(); renderCalendar(); });
-
-function renderCalendar(){
-  if(location.hash!=='#dashboard') return;
-  if(calMode==='week') return renderWeek();
-  return renderMonth();
-}
-function renderWeek(){
-  const header=document.getElementById('calHeader'); const grid=document.getElementById('calendar');
-  if(!header||!grid) return;
-  header.style.display='grid'; grid.style.display='grid'; document.getElementById('monthHeader')?.remove(); document.getElementById('monthGrid')?.remove();
-  const start=getMonday(calRefDate); const end=new Date(start); end.setDate(end.getDate()+6);
-  document.getElementById('calRange').textContent = fmt2(start.getDate())+'.'+fmt2(start.getMonth()+1)+' – '+fmt2(end.getDate())+'.'+fmt2(end.getMonth()+1);
-  const days=[null]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push('<div class="cell">'+DAY_SHORT[i]+' '+fmt2(d.getDate())+'.'+fmt2(d.getMonth()+1)+'</div>'); } header.innerHTML=days.join('');
-  const HSTART=8,HEND=22,H=48; let timeCol='<div class="cal-timecol">'; for(let h=HSTART;h<=HEND;h++) timeCol+='<div class="cal-time">'+fmt2(h)+':00</div>'; timeCol+='</div>';
-  const dayCols=[]; for(let i=0;i<7;i++){ let col='<div class="cal-day" style="height:'+((HEND-HSTART+1)*H)+'px">'; for(let h=HSTART;h<=HEND;h++) col+='<div class="cal-hour"></div>';
-    for(const e of db.enrollments){
-      const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
-      for(const s of sessions){ const d0=new Date(start); d0.setDate(start.getDate()+i); if(s.d.toDateString()===d0.toDateString()){ const top=((s.d.getHours()-HSTART)*H)+(s.d.getMinutes()/60)*H; const height=Math.max(36,H*(Number(s.dur)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(s.d.getHours(),s.d.getMinutes())}</div></div>`; } }
-      const p=parseSchedule(e.schedule); if(p && p.dow===i){ const top=((p.hh-HSTART)*H)+(p.mm/60)*H; const height=Math.max(36,H*((e.duration||60)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(p.hh,p.mm)}</div></div>`; }
-    } col+='</div>'; dayCols.push(col); }
-  grid.innerHTML=timeCol+dayCols.join('');
-}
-function renderMonth(){
-  const container=document.getElementById('calendar'); const header=document.getElementById('calHeader'); if(!container||!header) return;
-  header.style.display='none'; container.style.display='block'; document.getElementById('monthHeader')?.remove(); document.getElementById('monthGrid')?.remove();
-  const mh=document.createElement('div'); mh.id='monthHeader'; mh.className='month-header'; for(let i=0;i<7;i++) mh.innerHTML+='<div class="cell">'+DAY_SHORT[i]+'</div>'; header.parentNode.insertBefore(mh, container);
-  const first=new Date(calRefDate.getFullYear(), calRefDate.getMonth(), 1); const start=getMonday(first); const grid=document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
-  for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const cell=document.createElement('div'); cell.className='month-cell'; const inMonth=d.getMonth()===calRefDate.getMonth(); cell.innerHTML='<div class="mday" style="opacity:'+(inMonth?1:.5)+'">'+fmt2(d.getDate())+'</div>';
-    for(const e of db.enrollments){ const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
-      for(const s of sessions){ if(s.d.toDateString()===d.toDateString()){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(s.d.getHours(),s.d.getMinutes())+' · '+stu+' <span class="badge">'+cou+'</span></span>'; } }
-      const p=parseSchedule(e.schedule); if(p && ((d.getDay()+6)%7)===p.dow){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(p.hh,p.mm)+' · '+stu+' <span class="badge">'+cou+'</span></span>'; }
-    } grid.appendChild(cell); }
-  container.parentNode.insertBefore(grid, container.nextSibling);
-}
-// re-render when data changes or hash changes
-window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') setTimeout(renderCalendar,0); });
-const _renderAll_v153 = renderAll; renderAll = function(){ _renderAll_v153(); if(location.hash==='#dashboard') renderCalendar(); };
-setTimeout(renderCalendar,0);
-if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
+    if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
     console.log('DPSA v14.1 init done');
   } catch(err) {
     console.error('DPSA v14.1 init error:', err);
   }
 });
+
+
+/* === DPSA Calendar v15.8 (isolated) === */
+(function(){
+  // State
+  let DPSA_CAL_mode = 'week';
+  let DPSA_CAL_ref = new Date();
+
+  // Helpers
+  const fmt2 = n => String(n).padStart(2,'0');
+  const fmtHM = (h,m) => `${fmt2(h)}:${fmt2(m)}`;
+  const getMonday = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; };
+  const DAY_SHORT2 = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const DAY_MAP2 = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
+  function parseSchedule2(s){
+    if(!s) return null;
+    let t=(s+'').toLowerCase().replace(/\./g,':').trim(); let dow=null;
+    for(const k in DAY_MAP2){ if(t.includes(k)){ dow=DAY_MAP2[k]; break; } }
+    const m = t.match(/(\d{1,2})[:](\d{2})/) || t.match(/(\d{1,2})\s*$/);
+    let hh=17, mm=0; if(m){ hh=Number(m[1]); mm=Number(m[2]||0); }
+    return dow==null? null : { dow, hh, mm };
+  }
+  function readSessions2(e){
+    // returns [{d:Date, dur:Number}, ...]
+    const arr = (e.sessions||[]).map(s => {
+      const d = new Date(s.dt);
+      if (isNaN(d.getTime())) return null;
+      const dur = (s.duration ?? e.duration ?? 60);
+      return { d, dur };
+    }).filter(Boolean);
+    return arr;
+  }
+
+  // Rendering
+  function renderWeek2(){
+    const header = document.getElementById('calHeader');
+    const grid = document.getElementById('calendar');
+    const range = document.getElementById('calRange');
+    if(!header || !grid || !range) return;
+    header.style.display='grid'; grid.style.display='grid';
+    document.getElementById('monthHeader')?.remove();
+    document.getElementById('monthGrid')?.remove();
+
+    const start = getMonday(DPSA_CAL_ref);
+    const end = new Date(start); end.setDate(end.getDate()+6);
+    range.textContent = `${fmt2(start.getDate())}.${fmt2(start.getMonth()+1)} – ${fmt2(end.getDate())}.${fmt2(end.getMonth()+1)}`;
+
+    const days=[null];
+    for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push(`<div class="cell">${DAY_SHORT2[i]} ${fmt2(d.getDate())}.${fmt2(d.getMonth()+1)}</div>`); }
+    header.innerHTML = days.join('');
+
+    const HSTART=8, HEND=22, H=48;
+    let timeCol = '<div class="cal-timecol">';
+    for(let h=HSTART; h<=HEND; h++){ timeCol += `<div class="cal-time">${fmt2(h)}:00</div>`; }
+    timeCol += '</div>';
+
+    const dayCols=[];
+    for(let i=0;i<7;i++){
+      let col = `<div class="cal-day" style="height:${(HEND-HSTART+1)*H}px">`;
+      for(let h=HSTART; h<=HEND; h++){ col += '<div class="cal-hour"></div>'; }
+      for(const e of (window.db?.enrollments || [])){
+        // Sessions
+        const sessions = readSessions2(e);
+        for(const s of sessions){
+          const d0 = new Date(start); d0.setDate(start.getDate()+i);
+          if (s.d.toDateString() === d0.toDateString()){
+            const top = ((s.d.getHours()-HSTART)*H) + (s.d.getMinutes()/60)*H;
+            const height = Math.max(36, H*(Number(s.dur)/60));
+            const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
+            const tea = (window.byId?.(window.db?.teachers, e.teacherId)?.name) || 'Öğretmen';
+            const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+            col += `<div class="event" style="top:${top}px;height:${height}px">
+              <div class="title">${stu} <span class="badge">${cou}</span></div>
+              <div class="meta">${tea} · ${fmtHM(s.d.getHours(), s.d.getMinutes())}</div>
+            </div>`;
+          }
+        }
+        // Recurring
+        const p = parseSchedule2(e.schedule);
+        if(p && p.dow===i){
+          const dur = Number(e.duration||60);
+          const top = ((p.hh-HSTART)*H) + (p.mm/60)*H;
+          const height = Math.max(36, H*(dur/60));
+          const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
+          const tea = (window.byId?.(window.db?.teachers, e.teacherId)?.name) || 'Öğretmen';
+          const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+          col += `<div class="event" style="top:${top}px;height:${height}px">
+            <div class="title">${stu} <span class="badge">${cou}</span></div>
+            <div class="meta">${tea} · ${fmtHM(p.hh, p.mm)}</div>
+          </div>`;
+        }
+      }
+      col += '</div>';
+      dayCols.push(col);
+    }
+    grid.innerHTML = timeCol + dayCols.join('');
+  }
+
+  function renderMonth2(){
+    const container = document.getElementById('calendar');
+    const header = document.getElementById('calHeader');
+    const range = document.getElementById('calRange');
+    if(!container || !header || !range) return;
+
+    header.style.display='none'; container.style.display='block';
+    document.getElementById('monthHeader')?.remove();
+    document.getElementById('monthGrid')?.remove();
+
+    // Month header
+    const mh = document.createElement('div'); mh.id='monthHeader'; mh.className='month-header';
+    for(let i=0;i<7;i++){ mh.innerHTML += `<div class="cell">${DAY_SHORT2[i]}</div>`; }
+    header.parentNode.insertBefore(mh, container);
+
+    const first = new Date(DPSA_CAL_ref.getFullYear(), DPSA_CAL_ref.getMonth(), 1);
+    const start = getMonday(first);
+    const grid = document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
+
+    for(let i=0;i<42;i++){
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const cell = document.createElement('div'); cell.className='month-cell';
+      const inMonth = d.getMonth()===DPSA_CAL_ref.getMonth();
+      cell.innerHTML = `<div class="mday" style="opacity:${inMonth?1:.5}">${fmt2(d.getDate())}</div>`;
+
+      for(const e of (window.db?.enrollments || [])){
+        // Sessions
+        const sessions = readSessions2(e);
+        for(const s of sessions){
+          if (s.d.toDateString() === d.toDateString()){
+            const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
+            const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+            cell.innerHTML += `<span class="pill">${fmtHM(s.d.getHours(), s.d.getMinutes())} · ${stu} <span class="badge">${cou}</span></span>`;
+          }
+        }
+        // Recurring
+        const p = parseSchedule2(e.schedule);
+        const dow = (d.getDay()+6)%7;
+        if(p && p.dow===dow){
+          const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
+          const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+          cell.innerHTML += `<span class="pill">${fmtHM(p.hh, p.mm)} · ${stu} <span class="badge">${cou}</span></span>`;
+        }
+      }
+      grid.appendChild(cell);
+    }
+    container.parentNode.insertBefore(grid, container.nextSibling);
+    range.textContent = new Date(DPSA_CAL_ref).toLocaleDateString('tr-TR', {month:'long', year:'numeric'});
+  }
+
+  function renderCalendar2(){
+    if (location.hash !== '#dashboard') return;
+    if (DPSA_CAL_mode === 'week') renderWeek2(); else renderMonth2();
+    // toggle button style
+    const w = document.getElementById('modeWeek'), m = document.getElementById('modeMonth');
+    if(w && m){ w.classList.toggle('active', DPSA_CAL_mode==='week'); m.classList.toggle('active', DPSA_CAL_mode==='month'); }
+  }
+
+  // Expose a safe render hook for the app
+  window.dpsaCalRender = renderCalendar2;
+
+  // Controls
+  document.getElementById('modeWeek')?.addEventListener('click', () => { DPSA_CAL_mode='week'; renderCalendar2(); });
+  document.getElementById('modeMonth')?.addEventListener('click', () => { DPSA_CAL_mode='month'; renderCalendar2(); });
+  document.getElementById('calPrev')?.addEventListener('click', () => { DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?-7:-30)); renderCalendar2(); });
+  document.getElementById('calNext')?.addEventListener('click', () => { DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?+7:+30)); renderCalendar2(); });
+  document.getElementById('calToday')?.addEventListener('click', () => { DPSA_CAL_ref = new Date(); renderCalendar2(); });
+
+  // Re-render on hash change and after app renders
+  window.addEventListener('hashchange', () => renderCalendar2());
+  if (window.renderAll){
+    const old = window.renderAll;
+    window.renderAll = function(){ old(); renderCalendar2(); };
+  }
+  // First render
+  setTimeout(renderCalendar2, 0);
+})(); // end IIFE
 
 </script>
 </body>
