@@ -701,7 +701,7 @@ function renderCalendar(){
     for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
     for(const e of db.enrollments){
       // Sessions (exact dates)
-      const sessions = (e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur: (s.duration ?? e.duration ?? 60) } }).filter(Boolean);
+      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur: (s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
       for(const s of sessions){
         const test = new Date(start); test.setDate(start.getDate()+i);
         if(s.d.getFullYear()===test.getFullYear() && s.d.getMonth()===test.getMonth() && s.d.getDate()===test.getDate()){
@@ -744,77 +744,7 @@ document.getElementById('calToday')?.addEventListener('click', ()=>{ calWeekStar
 const _renderAll = renderAll;
 renderAll = function(){ _renderAll(); renderCalendar(); };
 
-    
-(function(){
-// ===== Calendar v15.3 (week/month) =====
-var calMode = 'week';
-var calRefDate = new Date();
-
-function fmt2(n){ return String(n).padStart(2,'0'); }
-function fmtTime(h,m){ return fmt2(h)+':'+fmt2(m); }
-function getMonday(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
-const DAY_SHORT = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-const CAL_DAY_MAP = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
-function parseSchedule(s){
-  if(!s) return null;
-  let t=(s+'').toLowerCase().replace(/\./g,':').trim(), dow=null;
-  for(const k in CAL_DAY_MAP){ if(t.includes(k)){ dow=CAL_DAY_MAP[k]; break; } }
-  const m=t.match(/(\d{1,2})[:](\d{2})/) || t.match(/(\d{1,2})\s*$/);
-  let hh=17, mm=0; if(m){ hh=Number(m[1]); mm=Number(m[2]||0); }
-  return dow==null? null : {dow,hh,mm};
-}
-function setMode(m){
-  calMode=m;
-  document.getElementById('modeWeek')?.classList.toggle('active', m==='week');
-  document.getElementById('modeMonth')?.classList.toggle('active', m==='month');
-  renderCalendar();
-}
-document.addEventListener('click', (e)=>{
-  if(e.target?.id==='modeWeek') setMode('week');
-  if(e.target?.id==='modeMonth') setMode('month');
-});
-document.getElementById('calPrev')?.addEventListener('click', ()=>{ calRefDate.setDate(calRefDate.getDate() + (calMode==='week'?-7: -30)); renderCalendar(); });
-document.getElementById('calNext')?.addEventListener('click', ()=>{ calRefDate.setDate(calRefDate.getDate() + (calMode==='week'?+7:+30)); renderCalendar(); });
-document.getElementById('calToday')?.addEventListener('click', ()=>{ calRefDate=new Date(); renderCalendar(); });
-
-function renderCalendar(){
-  if(location.hash!=='#dashboard') return;
-  if(calMode==='week') return renderWeek();
-  return renderMonth();
-}
-function renderWeek(){
-  const header=document.getElementById('calHeader'); const grid=document.getElementById('calendar');
-  if(!header||!grid) return;
-  header.style.display='grid'; grid.style.display='grid'; document.getElementById('monthHeader')?.remove(); document.getElementById('monthGrid')?.remove();
-  const start=getMonday(calRefDate); const end=new Date(start); end.setDate(end.getDate()+6);
-  document.getElementById('calRange').textContent = fmt2(start.getDate())+'.'+fmt2(start.getMonth()+1)+' – '+fmt2(end.getDate())+'.'+fmt2(end.getMonth()+1);
-  const days=[null]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push('<div class="cell">'+DAY_SHORT[i]+' '+fmt2(d.getDate())+'.'+fmt2(d.getMonth()+1)+'</div>'); } header.innerHTML=days.join('');
-  const HSTART=8,HEND=22,H=48; let timeCol='<div class="cal-timecol">'; for(let h=HSTART;h<=HEND;h++) timeCol+='<div class="cal-time">'+fmt2(h)+':00</div>'; timeCol+='</div>';
-  const dayCols=[]; for(let i=0;i<7;i++){ let col='<div class="cal-day" style="height:'+((HEND-HSTART+1)*H)+'px">'; for(let h=HSTART;h<=HEND;h++) col+='<div class="cal-hour"></div>';
-    for(const e of db.enrollments){
-      const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
-      for(const s of sessions){ const d0=new Date(start); d0.setDate(start.getDate()+i); if(s.d.toDateString()===d0.toDateString()){ const top=((s.d.getHours()-HSTART)*H)+(s.d.getMinutes()/60)*H; const height=Math.max(36,H*(Number(s.dur)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(s.d.getHours(),s.d.getMinutes())}</div></div>`; } }
-      const p=parseSchedule(e.schedule); if(p && p.dow===i){ const top=((p.hh-HSTART)*H)+(p.mm/60)*H; const height=Math.max(36,H*((e.duration||60)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(p.hh,p.mm)}</div></div>`; }
-    } col+='</div>'; dayCols.push(col); }
-  grid.innerHTML=timeCol+dayCols.join('');
-}
-function renderMonth(){
-  const container=document.getElementById('calendar'); const header=document.getElementById('calHeader'); if(!container||!header) return;
-  header.style.display='none'; container.style.display='block'; document.getElementById('monthHeader')?.remove(); document.getElementById('monthGrid')?.remove();
-  const mh=document.createElement('div'); mh.id='monthHeader'; mh.className='month-header'; for(let i=0;i<7;i++) mh.innerHTML+='<div class="cell">'+DAY_SHORT[i]+'</div>'; header.parentNode.insertBefore(mh, container);
-  const first=new Date(calRefDate.getFullYear(), calRefDate.getMonth(), 1); const start=getMonday(first); const grid=document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
-  for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const cell=document.createElement('div'); cell.className='month-cell'; const inMonth=d.getMonth()===calRefDate.getMonth(); cell.innerHTML='<div class="mday" style="opacity:'+(inMonth?1:.5)+'">'+fmt2(d.getDate())+'</div>';
-    for(const e of db.enrollments){ const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
-      for(const s of sessions){ if(s.d.toDateString()===d.toDateString()){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(s.d.getHours(),s.d.getMinutes())+' · '+stu+' <span class="badge">'+cou+'</span></span>'; } }
-      const p=parseSchedule(e.schedule); if(p && ((d.getDay()+6)%7)===p.dow){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(p.hh,p.mm)+' · '+stu+' <span class="badge">'+cou+'</span></span>'; }
-    } grid.appendChild(cell); }
-  container.parentNode.insertBefore(grid, container.nextSibling);
-}
-// re-render when data changes or hash changes
-window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') setTimeout(renderCalendar,0); });
-const _renderAll_v153 = renderAll; renderAll = function(){ _renderAll_v153(); if(location.hash==='#dashboard') renderCalendar(); };
-setTimeout(renderCalendar,0);
-if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
+    if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
     console.log('DPSA v14.1 init done');
   } catch(err) {
     console.error('DPSA v14.1 init error:', err);
