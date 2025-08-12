@@ -701,7 +701,7 @@ function renderCalendar(){
     for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
     for(const e of db.enrollments){
       // Sessions (exact dates)
-      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur: (s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
+      const sessions = (e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur: (s.duration ?? e.duration ?? 60) } }).filter(Boolean);
       for(const s of sessions){
         const test = new Date(start); test.setDate(start.getDate()+i);
         if(s.d.getFullYear()===test.getFullYear() && s.d.getMonth()===test.getMonth() && s.d.getDate()===test.getDate()){
@@ -792,7 +792,7 @@ function renderWeek(){
   const HSTART=8,HEND=22,H=48; let timeCol='<div class="cal-timecol">'; for(let h=HSTART;h<=HEND;h++) timeCol+='<div class="cal-time">'+fmt2(h)+':00</div>'; timeCol+='</div>';
   const dayCols=[]; for(let i=0;i<7;i++){ let col='<div class="cal-day" style="height:'+((HEND-HSTART+1)*H)+'px">'; for(let h=HSTART;h<=HEND;h++) col+='<div class="cal-hour"></div>';
     for(const e of db.enrollments){
-      const sessions=(e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur:(s.duration??e.duration??60)} }catch(_){ return null } }).filter(Boolean);
+      const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
       for(const s of sessions){ const d0=new Date(start); d0.setDate(start.getDate()+i); if(s.d.toDateString()===d0.toDateString()){ const top=((s.d.getHours()-HSTART)*H)+(s.d.getMinutes()/60)*H; const height=Math.max(36,H*(Number(s.dur)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(s.d.getHours(),s.d.getMinutes())}</div></div>`; } }
       const p=parseSchedule(e.schedule); if(p && p.dow===i){ const top=((p.hh-HSTART)*H)+(p.mm/60)*H; const height=Math.max(36,H*((e.duration||60)/60)); const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const tea=byId(db.teachers,e.teacherId)?.name||'Öğretmen'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; col+=`<div class="event" style="top:${top}px;height:${height}px"><div class="title">${stu} <span class="badge">${cou}</span></div><div class="meta">${tea} · ${fmtTime(p.hh,p.mm)}</div></div>`; }
     } col+='</div>'; dayCols.push(col); }
@@ -804,7 +804,7 @@ function renderMonth(){
   const mh=document.createElement('div'); mh.id='monthHeader'; mh.className='month-header'; for(let i=0;i<7;i++) mh.innerHTML+='<div class="cell">'+DAY_SHORT[i]+'</div>'; header.parentNode.insertBefore(mh, container);
   const first=new Date(calRefDate.getFullYear(), calRefDate.getMonth(), 1); const start=getMonday(first); const grid=document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
   for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const cell=document.createElement('div'); cell.className='month-cell'; const inMonth=d.getMonth()===calRefDate.getMonth(); cell.innerHTML='<div class="mday" style="opacity:'+(inMonth?1:.5)+'">'+fmt2(d.getDate())+'</div>';
-    for(const e of db.enrollments){ const sessions=(e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur:(s.duration??e.duration??60)} }catch(_){ return null } }).filter(Boolean);
+    for(const e of db.enrollments){ const sessions=(e.sessions||[]).map(s=>{ const d=new Date(s.dt); return isNaN(d.getTime()) ? null : { d, dur:(s.duration??e.duration??60) } }).filter(Boolean);
       for(const s of sessions){ if(s.d.toDateString()===d.toDateString()){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(s.d.getHours(),s.d.getMinutes())+' · '+stu+' <span class="badge">'+cou+'</span></span>'; } }
       const p=parseSchedule(e.schedule); if(p && ((d.getDay()+6)%7)===p.dow){ const stu=byId(db.students,e.studentId)?.name||'Öğrenci'; const cou=byId(db.courses,e.courseId)?.title||'Ders'; cell.innerHTML += '<span class="pill">'+fmtTime(p.hh,p.mm)+' · '+stu+' <span class="badge">'+cou+'</span></span>'; }
     } grid.appendChild(cell); }
