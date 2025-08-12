@@ -218,6 +218,14 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
         <label>Pay Oranı (kayıt için, % - opsiyonel) <input type="number" name="shareOverride" min="0" max="100" step="1" /></label>
       </div>
       <label>Süre (dakika) <input type="number" name="duration" min="15" step="15" placeholder="60" /></label>
+<div class="card" style="background:#0f1320;border:1px dashed var(--border)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap">
+    <strong>Tekil Ders Tarihleri (opsiyonel, en fazla 4)</strong>
+    <button class="btn-outline" type="button" id="addSession">+ Tarih/Saat Ekle</button>
+  </div>
+  <div id="sessionList" class="session-list" style="display:grid;gap:.5rem;margin-top:.5rem"></div>
+  <small class="muted">Her satıra tarih& saat ekleyin. Süre boşsa kayıt süresi (dakika) kullanılır.</small>
+</div>
       <label>Gün/Saat <input name="schedule" placeholder="Örn: Salı 17:00"/></label>
       <menu>
         <button class="btn-outline" type="button" data-close>Vazgeç</button>
@@ -258,7 +266,7 @@ dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    console.log('DPSA v13.4 init start');
+    console.log('DPSA v14 init start');
 
 console.log('DPSA app.js v11 loaded');
 const $ = (s, r=document) => r.querySelector(s);
@@ -309,6 +317,38 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Helpers */
+/* Session rows (enroll form) */
+function addSessionRow(v={dt:'',duration:''}){
+  const wrap = document.getElementById('sessionList'); if(!wrap) return;
+  const row = document.createElement('div');
+  row.className = 'sess-row';
+  row.innerHTML = `<div class="grid2">
+      <label>Tarih & Saat <input type="datetime-local" class="sess-dt" step="900" value="${v.dt? new Date(v.dt).toISOString().slice(0,16) : ''}"></label>
+      <label>Süre (dk, opsiyonel) <input type="number" class="sess-dur" min="15" step="15" placeholder="" value="${v.duration ?? ''}"></label>
+    </div>
+    <div><button class="btn-outline sess-del" type="button">Sil</button></div>`;
+  wrap.appendChild(row);
+  row.querySelector('.sess-del').onclick = ()=> row.remove();
+}
+function readSessions(){
+  const wrap = document.getElementById('sessionList'); if(!wrap) return [];
+  const out = [];
+  wrap.querySelectorAll('.sess-row').forEach(r=>{
+    const dt = r.querySelector('.sess-dt').value;
+    const dur = r.querySelector('.sess-dur').value;
+    if(dt){ out.push({ dt: new Date(dt).toISOString(), duration: dur? Number(dur) : null }); }
+  });
+  return out.slice(0,4);
+}
+function fillSessions(arr){
+  const wrap = document.getElementById('sessionList'); if(!wrap) return;
+  wrap.innerHTML = '';
+  (arr||[]).slice(0,4).forEach(v=> addSessionRow(v));
+}
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='addSession'){ addSessionRow(); }
+});
+
 function byId(arr, id){ return (arr||[]).find(x=>x.id===id); }
 function table(headers, rows){
   return `<table class="table">
@@ -470,15 +510,16 @@ function renderEnrollments(){
     const st=byId(db.students,e.studentId)?.name||'-';
     const co=byId(db.courses,e.courseId)?.title||'-';
     const te=byId(db.teachers,e.teacherId)?.name||'-';
+    const sessTxt = (e.sessions||[]).map(s=>{ try{ const d=new Date(s.dt); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }catch(_){ return '' } }).join(', ');
     return `<tr>
-      <td>${st}</td><td>${co}</td><td>${te}</td><td>${e.startDate||''}</td><td>${e.schedule||''}</td><td>${e.duration ?? 60}</td><td>${e.shareOverride ?? ''}</td>
+      <td>${st}</td><td>${co}</td><td>${te}</td><td>${e.startDate||''}</td><td>${e.schedule||''}</td><td>${sessTxt}</td><td>${e.duration ?? 60}</td><td>${e.shareOverride ?? ''}</td>
       <td class="row-actions">
         <button class="btn-outline" data-edit-enroll="${e.id}">Düzenle</button>
         <button class="btn-outline" data-del-enroll="${e.id}">Sil</button>
       </td>
     </tr>`;
   });
-  $('#enrollmentTable').innerHTML = table(['Öğrenci','Ders','Öğretmen','Başlangıç','Plan','Süre (dk)','Pay % (kayıt)',''], rows);
+  $('#enrollmentTable').innerHTML = table(['Öğrenci','Ders','Öğretmen','Başlangıç','Plan','Tekil Tarihler','Süre (dk)','Pay % (kayıt)',''], rows);
   $$('#enrollmentTable [data-edit-enroll]').forEach(b=>b.onclick=()=>openEnroll(byId(db.enrollments,b.dataset.editEnroll)));
   $$('#enrollmentTable [data-del-enroll]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){
     db.enrollments = db.enrollments.filter(x=>x.id!==b.dataset.delEnroll);
@@ -486,7 +527,7 @@ function renderEnrollments(){
 }
 function openEnroll(data){
   const dlg=$('#enrollModal'), f=$('#enrollForm'); f.reset(); renderEnrollmentOptions();
-  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); f.duration.value=(data.duration ?? 60); }
+  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); f.duration.value=(data.duration ?? 60); fillSessions(data.sessions||[]); } else { fillSessions([]); }
   else { f.id.value=''; }
   dlg.showModal();
 }
@@ -494,7 +535,7 @@ $('#enrollForm').addEventListener('submit', (e)=>{
   e.preventDefault();
   const f=e.target;
   const newId = (f.id.value && f.id.value.trim()) ? f.id.value.trim() : uid();
-  const item={ id:newId, studentId:f.studentId.value, teacherId:f.teacherId.value, courseId:f.courseId.value, startDate:f.startDate.value, schedule:f.schedule.value.trim(), shareOverride: f.shareOverride.value===''? null : Number(f.shareOverride.value), duration: f.duration.value===''? 60 : Number(f.duration.value) };
+  const item={ id:newId, studentId:f.studentId.value, teacherId:f.teacherId.value, courseId:f.courseId.value, startDate:f.startDate.value, schedule:f.schedule.value.trim(), shareOverride: f.shareOverride.value===''? null : Number(f.shareOverride.value), duration: f.duration.value===''? 60 : Number(f.duration.value), sessions: readSessions() };
   const i=db.enrollments.findIndex(x=>x.id===item.id);
   if(i>-1) db.enrollments[i]=item; else db.enrollments.push(item);
   store.save(db); $('#enrollModal').close('submit'); renderAll();
@@ -666,18 +707,37 @@ function renderCalendar(){
     // events for this day
     // For each enrollment, if schedule matches this dow, place event
     for(const e of db.enrollments){
+      // Sessions first: exact dates
+      const sessions = (e.sessions||[]).map(s=>{ try{ return new Date(s.dt) }catch(_){ return null } }).filter(Boolean);
+      for(const sd of sessions){
+        const d = new Date(start); d.setDate(start.getDate()+i);
+        if(sd.getFullYear()===d.getFullYear() && sd.getMonth()===d.getMonth() && sd.getDate()===d.getDate()){
+          const dur = Number(s.duration || e.duration || 60);
+          const top = ((sd.getHours() - HSTART) * H) + (sd.getMinutes()/60)*H;
+          const height = Math.max(24, H * (dur/60));
+          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+          const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
+          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+          col += `<div class="event" style="top:${top}px;height:${height}px">
+            <div class="title">${stu} <span class="badge">${cou}</span></div>
+            <div class="meta">${tea} · ${String(sd.getHours()).padStart(2,'0')}:${String(sd.getMinutes()).padStart(2,'0')}</div>
+          </div>`;
+        }
+      }
+      // Then recurring schedule if provided
       const parsed = parseSchedule(e.schedule);
-      if(!parsed || parsed.dow!==i) continue;
-      const dur = Number(e.duration||60);
-      const top = ((parsed.hh - HSTART) * H) + (parsed.mm/60)*H;
-      const height = Math.max(24, H * (dur/60));
-      const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
-      const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
-      const cou = byId(db.courses, e.courseId)?.title || 'Ders';
-      col += `<div class="event" style="top:${top}px;height:${height}px">
-        <div class="title">${stu} <span class="badge">${cou}</span></div>
-        <div class="meta">${tea} · ${String(parsed.hh).padStart(2,'0')}:${String(parsed.mm).padStart(2,'0')}</div>
-      </div>`;
+      if(parsed && parsed.dow===i){
+        const dur = Number(e.duration||60);
+        const top = ((parsed.hh - HSTART) * H) + (parsed.mm/60)*H;
+        const height = Math.max(24, H * (dur/60));
+        const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
+        const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
+        const cou = byId(db.courses, e.courseId)?.title || 'Ders';
+        col += `<div class="event" style="top:${top}px;height:${height}px">
+          <div class="title">${stu} <span class="badge">${cou}</span></div>
+          <div class="meta">${tea} · ${String(parsed.hh).padStart(2,'0')}:${String(parsed.mm).padStart(2,'0')}</div>
+        </div>`;
+      }
     }
     col += '</div>';
     dayCols.push(col);
@@ -695,7 +755,7 @@ renderAll = function(){
   renderCalendar();
 };
 
-    console.log('DPSA v13.4 init done');
+    console.log('DPSA v14 init done');
   } catch(err) {
     console.error('DPSA v13 init error:', err);
   }
