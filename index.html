@@ -62,6 +62,20 @@ nav a.active{border-color:rgba(79,140,255,.6);background:rgba(79,140,255,.12)}
 .table th,.table td{border:1px solid var(--border);padding:.45rem .6rem}
 .muted{color:var(--muted)}
 footer{color:var(--muted);font-size:.85rem;margin-top:24px}
+
+/* Modal */
+dialog.modal{border:1px solid var(--border);background:#0f1320;color:var(--fg);border-radius:12px;padding:0;max-width:560px;width:96%}
+.modal header{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700}
+.modal .body{padding:14px;display:grid;gap:10px}
+.modal .row{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center}
+.modal footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--border)}
+.modal input,.modal select,.modal textarea{width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--border);background:#0e1626;color:var(--fg)}
+.modal .chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);padding:2px 6px;border-radius:999px;font-size:.8rem;background:#0e1526}
+.btn-sm{padding:.25rem .5rem;font-size:.85rem}
+.table td.actions{white-space:nowrap}
+/* small util */
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -115,32 +129,32 @@ footer{color:var(--muted);font-size:.85rem;margin-top:24px}
   <!-- STUDENTS -->
   <section id="students" class="page" hidden>
     <div class="card">
-      <h3>Öğrenciler</h3>
-      <table class="table" id="tblStudents"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th></tr></thead><tbody></tbody></table>
+      <div class="flex-between"><h3>Öğrenciler</h3><button class="btn-outline btn-sm" id="btnAddStudent">+ Yeni Öğrenci</button></div>
+      <table class="table" id="tblStudents"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
   <!-- TEACHERS -->
   <section id="teachers" class="page" hidden>
     <div class="card">
-      <h3>Öğretmenler</h3>
-      <table class="table" id="tblTeachers"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th></tr></thead><tbody></tbody></table>
+      <div class="flex-between"><h3>Öğretmenler</h3><button class="btn-outline btn-sm" id="btnAddTeacher">+ Yeni Öğretmen</button></div>
+      <table class="table" id="tblTeachers"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
   <!-- COURSES -->
   <section id="courses" class="page" hidden>
     <div class="card">
-      <h3>Dersler/Branşlar</h3>
-      <table class="table" id="tblCourses"><thead><tr><th>Ders</th></tr></thead><tbody></tbody></table>
+      <div class="flex-between"><h3>Dersler/Branşlar</h3><button class="btn-outline btn-sm" id="btnAddCourse">+ Yeni Ders</button></div>
+      <table class="table" id="tblCourses"><thead><tr><th>Ders</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
   <!-- ENROLLMENTS -->
   <section id="enrollments" class="page" hidden>
     <div class="card">
-      <h3>Kayıtlar</h3>
-      <table class="table" id="tblEnrolls"><thead><tr><th>Öğrenci</th><th>Ders</th><th>Öğretmen</th><th>Gün/Saat</th></tr></thead><tbody></tbody></table>
+      <div class="flex-between"><h3>Kayıtlar</h3><button class="btn-outline btn-sm" id="btnAddEnroll">+ Yeni Kayıt</button></div>
+      <table class="table" id="tblEnrolls"><thead><tr><th>Öğrenci</th><th>Ders</th><th>Öğretmen</th><th>Gün/Saat</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -162,7 +176,20 @@ footer{color:var(--muted);font-size:.85rem;margin-top:24px}
     <div class="card"><h3>Ayarlar</h3><div class="muted">Akademi adı vb. (mevcut veriden okunur).</div></div>
   </section>
 
-  <footer>© 2025 DPSA Yönetim PRO.</footer>
+  
+<!-- Modal -->
+<dialog class="modal" id="modal">
+  <form method="dialog">
+    <header id="modalTitle">Form</header>
+    <div class="body" id="modalBody"></div>
+    <footer>
+      <button class="btn-outline" id="btnCancel" value="cancel">Vazgeç</button>
+      <button class="btn" id="btnSave" value="default">Kaydet</button>
+    </footer>
+  </form>
+</dialog>
+
+<footer>© 2025 DPSA Yönetim PRO.</footer>
 </div>
 
 <script>
@@ -205,6 +232,104 @@ window.byId = byId; // calendar kullanıyor
 })();
 
 // ----------------- Sayfalar -----------------
+
+// ----------------- CRUD Utilities -----------------
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function saveDB(db){ localStorage.setItem('dpsa_v11', JSON.stringify(db)); }
+function saveAndRender(){ saveDB(window.db); renderAll(); dpsaCalRender?.(); }
+
+const modal = { el:null, body:null, title:null, onSave:null };
+(function initModal(){
+  modal.el = document.getElementById('modal');
+  modal.body = document.getElementById('modalBody');
+  modal.title= document.getElementById('modalTitle');
+  document.getElementById('btnSave').addEventListener('click', e=>{
+    if(typeof modal.onSave==='function'){ 
+      const ok = modal.onSave();
+      if(ok!==false) modal.el.close();
+    } else modal.el.close();
+  });
+  document.getElementById('btnCancel').addEventListener('click', ()=> modal.el.close());
+})();
+
+function openStudentForm(item){
+  modal.title.textContent = item? 'Öğrenci Düzenle' : 'Yeni Öğrenci';
+  modal.body.innerHTML = `
+    <div class="row"><label>Ad Soyad</label><input id="f_name" value="${item?.name||''}" required></div>
+    <div class="row"><label>Telefon</label><input id="f_phone" value="${item?.phone||''}"></div>
+    <div class="row"><label>E-posta</label><input id="f_email" value="${item?.email||''}"></div>
+  `;
+  modal.onSave = ()=>{
+    const name = document.getElementById('f_name').value.trim();
+    if(!name){ alert('Ad Soyad gerekli'); return false; }
+    if(item){ item.name=name; item.phone=document.getElementById('f_phone').value; item.email=document.getElementById('f_email').value; }
+    else{ window.db.students.push({id:uid(), name, phone:document.getElementById('f_phone').value, email:document.getElementById('f_email').value}); }
+    saveAndRender();
+  };
+  modal.el.showModal();
+}
+function openTeacherForm(item){
+  modal.title.textContent = item? 'Öğretmen Düzenle' : 'Yeni Öğretmen';
+  modal.body.innerHTML = `
+    <div class="row"><label>Ad Soyad</label><input id="f_name" value="${item?.name||''}" required></div>
+    <div class="row"><label>Telefon</label><input id="f_phone" value="${item?.phone||''}"></div>
+    <div class="row"><label>E-posta</label><input id="f_email" value="${item?.email||''}"></div>
+  `;
+  modal.onSave = ()=>{
+    const name = document.getElementById('f_name').value.trim();
+    if(!name){ alert('Ad Soyad gerekli'); return false; }
+    if(item){ item.name=name; item.phone=document.getElementById('f_phone').value; item.email=document.getElementById('f_email').value; }
+    else{ window.db.teachers.push({id:uid(), name, phone:document.getElementById('f_phone').value, email:document.getElementById('f_email').value}); }
+    saveAndRender();
+  };
+  modal.el.showModal();
+}
+function openCourseForm(item){
+  modal.title.textContent = item? 'Ders Düzenle' : 'Yeni Ders';
+  modal.body.innerHTML = `<div class="row"><label>Ders Adı</label><input id="f_title" value="${item?.title||''}" required></div>`;
+  modal.onSave = ()=>{
+    const title = document.getElementById('f_title').value.trim();
+    if(!title){ alert('Ders adı gerekli'); return false; }
+    if(item){ item.title=title; } else { window.db.courses.push({id:uid(), title}); }
+    saveAndRender();
+  };
+  modal.el.showModal();
+}
+function openEnrollForm(item){
+  const sops = (window.db.students||[]).map(s=>`<option value="${s.id}" ${item?.studentId===s.id?'selected':''}>${s.name}</option>`).join('');
+  const cops = (window.db.courses ||[]).map(c=>`<option value="${c.id}" ${item?.courseId===c.id?'selected':''}>${c.title}</option>`).join('');
+  const tops = (window.db.teachers||[]).map(t=>`<option value="${t.id}" ${item?.teacherId===t.id?'selected':''}>${t.name}</option>`).join('');
+  modal.title.textContent = item? 'Kayıt Düzenle' : 'Yeni Kayıt';
+  modal.body.innerHTML = `
+    <div class="row"><label>Öğrenci</label><select id="f_sid">${sops}</select></div>
+    <div class="row"><label>Ders</label><select id="f_cid">${cops}</select></div>
+    <div class="row"><label>Öğretmen</label><select id="f_tid">${tops}</select></div>
+    <div class="row"><label>Gün/Saat</label><input id="f_schedule" placeholder="Örn: Salı 17:00" value="${item?.schedule||''}"></div>
+    <div class="row"><label>Süre (dk)</label><input id="f_dur" type="number" min="15" step="5" value="${item?.duration||60}"></div>
+    <div class="row"><label>Tekil Ders (ops.)</label><input id="f_session" type="datetime-local"></div>
+    <div class="row"><label></label><small class="muted">İsteğe bağlı tek ders tarihi girerseniz kayıt altına eklenir.</small></div>
+  `;
+  modal.onSave = ()=>{
+    const e = item || {id:uid(), sessions:[]};
+    e.studentId = document.getElementById('f_sid').value;
+    e.courseId  = document.getElementById('f_cid').value;
+    e.teacherId = document.getElementById('f_tid').value;
+    e.schedule  = document.getElementById('f_schedule').value.trim();
+    e.duration  = Number(document.getElementById('f_dur').value||60);
+    const sdt = document.getElementById('f_session').value;
+    if(sdt){ e.sessions = (e.sessions||[]); e.sessions.push({dt:new Date(sdt).toISOString(), duration:e.duration}); }
+    if(item){ /* updated */ } else { window.db.enrollments.push(e); }
+    saveAndRender();
+  };
+  modal.el.showModal();
+}
+function doDelete(type, id){
+  if(!confirm('Silinsin mi?')) return;
+  const list = window.db[type]; const idx = list.findIndex(x=>x.id===id);
+  if(idx>-1){ list.splice(idx,1); saveAndRender(); }
+}
+// ----------------- end CRUD -----------------
+
 function setActiveNav(){
   const h = location.hash || '#dashboard';
   document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active', a.getAttribute('href')===h));
@@ -228,20 +353,21 @@ function renderCounts(db){
 function renderTables(db){
   // Students
   const sBody = document.querySelector('#tblStudents tbody'); sBody.innerHTML='';
-  (db.students||[]).forEach(s=> sBody.innerHTML += `<tr><td>${s.name||''}</td><td>${s.phone||''}</td><td>${s.email||''}</td></tr>`);
+  (db.students||[]).forEach(s=> sBody.innerHTML += `<tr><td>${s.name||''}</td><td>${s.phone||''}</td><td>${s.email||''}</td><td class='actions'><button class='btn-outline btn-sm' onclick='openStudentForm(byId(window.db.students,"${'"+s.id+"'}"))'>Düzenle</button> <button class='btn-outline btn-sm' onclick='doDelete("students","${'"+s.id+"'}")'>Sil</button></td></tr>`);
   // Teachers
   const tBody = document.querySelector('#tblTeachers tbody'); tBody.innerHTML='';
-  (db.teachers||[]).forEach(t=> tBody.innerHTML += `<tr><td>${t.name||''}</td><td>${t.phone||''}</td><td>${t.email||''}</td></tr>`);
+  (db.teachers||[]).forEach(t=> tBody.innerHTML += `<tr><td>${t.name||''}</td><td>${t.phone||''}</td><td>${t.email||''}</td><td class='actions'><button class='btn-outline btn-sm' onclick='openTeacherForm(byId(window.db.teachers,"${'"+t.id+"'}"))'>Düzenle</button> <button class='btn-outline btn-sm' onclick='doDelete("teachers","${'"+t.id+"'}")'>Sil</button></td></tr>`);
   // Courses
   const cBody = document.querySelector('#tblCourses tbody'); cBody.innerHTML='';
-  (db.courses||[]).forEach(c=> cBody.innerHTML += `<tr><td>${c.title||''}</td></tr>`);
+  (db.courses||[]).forEach(c=> cBody.innerHTML += `<tr><td>${c.title||''}</td><td class='actions'><button class='btn-outline btn-sm' onclick='openCourseForm(byId(window.db.courses,"${'"+c.id+"'}"))'>Düzenle</button> <button class='btn-outline btn-sm' onclick='doDelete("courses","${'"+c.id+"'}")'>Sil</button></td></tr>`);
   // Enrollments
   const eBody = document.querySelector('#tblEnrolls tbody'); eBody.innerHTML='';
   (db.enrollments||[]).forEach(e=>{
     const stu = byId(db.students,e.studentId)?.name||'';
     const tea = byId(db.teachers,e.teacherId)?.name||'';
     const cou = byId(db.courses, e.courseId )?.title||'';
-    eBody.innerHTML += `<tr><td>${stu}</td><td>${cou}</td><td>${tea}</td><td>${e.schedule||''}</td></tr>`;
+    eBody.innerHTML += `<tr><td>${stu}</td><td>${cou}</td><td>${tea}</td><td>${e.schedule||''}</td>
+      <td class='actions'><button class='btn-outline btn-sm' onclick='openEnrollForm(byId(window.db.enrollments,"${'"+e.id+"'}"))'>Düzenle</button> <button class='btn-outline btn-sm' onclick='doDelete("enrollments","${'"+e.id+"'}")'>Sil</button></td></tr>`;
   });
   // Payments
   const pBody = document.querySelector('#tblPayments tbody'); pBody.innerHTML='';
@@ -258,6 +384,13 @@ function renderAll(){
   showPage();
   renderCounts(db);
   renderTables(db);
+
+  // Buttons
+  document.getElementById('btnAddStudent')?.addEventListener('click', ()=> openStudentForm());
+  document.getElementById('btnAddTeacher')?.addEventListener('click', ()=> openTeacherForm());
+  document.getElementById('btnAddCourse') ?.addEventListener('click', ()=> openCourseForm());
+  document.getElementById('btnAddEnroll') ?.addEventListener('click', ()=> openEnrollForm());
+
 }
 window.renderAll = renderAll;
 window.addEventListener('hashchange', renderAll);
