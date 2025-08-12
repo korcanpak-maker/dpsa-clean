@@ -745,6 +745,7 @@ const _renderAll = renderAll;
 renderAll = function(){ _renderAll(); renderCalendar(); };
 
     
+(function(){
 // ===== Calendar v15.3 (week/month) =====
 var calMode = 'week';
 var calRefDate = new Date();
@@ -753,11 +754,11 @@ function fmt2(n){ return String(n).padStart(2,'0'); }
 function fmtTime(h,m){ return fmt2(h)+':'+fmt2(m); }
 function getMonday(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
 const DAY_SHORT = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-const DAY_MAP = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
+const CAL_DAY_MAP = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
 function parseSchedule(s){
   if(!s) return null;
   let t=(s+'').toLowerCase().replace(/\./g,':').trim(), dow=null;
-  for(const k in DAY_MAP){ if(t.includes(k)){ dow=DAY_MAP[k]; break; } }
+  for(const k in CAL_DAY_MAP){ if(t.includes(k)){ dow=CAL_DAY_MAP[k]; break; } }
   const m=t.match(/(\d{1,2})[:](\d{2})/) || t.match(/(\d{1,2})\s*$/);
   let hh=17, mm=0; if(m){ hh=Number(m[1]); mm=Number(m[2]||0); }
   return dow==null? null : {dow,hh,mm};
@@ -810,7 +811,9 @@ function renderMonth(){
   container.parentNode.insertBefore(grid, container.nextSibling);
 }
 // re-render when data changes or hash changes
-window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') setTimeout(renderCalendar,0); });
+window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') 
+})();
+setTimeout(renderCalendar,0); });
 const _renderAll_v153 = renderAll; renderAll = function(){ _renderAll_v153(); if(location.hash==='#dashboard') renderCalendar(); };
 setTimeout(renderCalendar,0);
 if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
