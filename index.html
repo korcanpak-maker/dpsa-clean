@@ -811,9 +811,7 @@ function renderMonth(){
   container.parentNode.insertBefore(grid, container.nextSibling);
 }
 // re-render when data changes or hash changes
-window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') 
-})();
-setTimeout(renderCalendar,0); });
+window.addEventListener('hashchange', ()=>{ if(location.hash==='#dashboard') setTimeout(renderCalendar,0); });
 const _renderAll_v153 = renderAll; renderAll = function(){ _renderAll_v153(); if(location.hash==='#dashboard') renderCalendar(); };
 setTimeout(renderCalendar,0);
 if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
