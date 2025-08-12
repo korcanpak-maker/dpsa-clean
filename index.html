@@ -1,785 +1,279 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DPSA Yönetim PRO</title>
-  <meta name="description" content="Öğrenci, öğretmen, ders, kayıt, ödeme ve hakediş yönetimi" />
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DPSA Yönetim PRO</title>
+<style>
+:root{
+  --bg:#0b0f1a; --fg:#e7ecff; --muted:#a8b3cf; --card:#121b2e; --border:#1d2a44; --brand:#4f8cff;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial}
+a{color:inherit;text-decoration:none}
+.container{max-width:1160px;margin:0 auto;padding:16px}
+.topbar{display:flex;align-items:center;gap:.6rem;justify-content:space-between}
+.brand{font-weight:800;letter-spacing:.3px}
+nav{display:flex;gap:.5rem;flex-wrap:wrap}
+nav a{padding:.45rem .7rem;border:1px solid var(--border);border-radius:8px;background:#0e1526}
+nav a.active{border-color:rgba(79,140,255,.6);background:rgba(79,140,255,.12)}
 
-:root{ --bg:#0b0e14; --fg:#eaeef7; --muted:#a8b3cf; --card:#121623; --border:#1d2333; --brand:#4f8cff; }
-*{box-sizing:border-box} html,body{margin:0;padding:0} body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
-.container{width:min(1200px,92vw);margin:0 auto}
-.topbar{position:sticky;top:0;z-index:10;background:rgba(11,14,20,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
-.topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
-.brand{font-size:1.2rem;margin:0} .brand span{color:var(--brand)}
-.tabs{display:flex;gap:.6rem;flex-wrap:wrap}
-.tabs .tab{padding:.45rem .7rem;border:1px solid var(--border);border-radius:10px;color:var(--muted)}
-.tabs .tab.active{border-color:var(--brand);color:var(--fg)}
-.page{padding:24px 0}
-.hidden{display:none}
-.page-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.tools{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
-.btn{background:var(--brand); border:1px solid transparent; color:#0b0e14; border-radius:10px; padding:.6rem .9rem; font-weight:700; cursor:pointer}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:.5rem .8rem;cursor:pointer}
-.table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.table th,.table td{border-bottom:1px solid var(--border);padding:.6rem .7rem;text-align:left}
-.table th{background:#0f1320;color:var(--muted);font-weight:700}
-.row-actions{display:flex;gap:.4rem}
-.form{display:grid;gap:.6rem;min-width:320px}
-.form label{display:grid;gap:.3rem;color:var(--muted);font-weight:600}
-.form input,.form select{padding:.55rem .7rem;border-radius:10px;border:1px solid var(--border);background:#0d1220;color:var(--fg)}
-dialog.modal{border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--fg);padding:1rem;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-.search{min-width:260px}
-.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
-.inline{display:inline-flex;gap:.4rem;align-items:center}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem}
-.muted{color:var(--muted)}
-.footer{padding:24px 0;color:var(--muted);border-top:1px solid var(--border);margin-top:24px}
+.grid{display:grid;gap:16px}
+.cards{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.card h3{margin:0 0 8px 0;font-size:.95rem;color:var(--muted)}
+.kpi{font-weight:800;font-size:20px}
 
-/* Calendar */
-.calendar-card{margin-top:12px}
-.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
-.cal-controls{display:flex;align-items:center;gap:.5rem}
-.cal-range{color:var(--muted);font-weight:700}
-.cal-header{display:grid;grid-template-columns:60px repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0}
-.cal-header .cell{background:#0f1320;color:var(--muted);padding:.5rem;font-weight:700;font-size:.85rem}
-.calendar{display:grid;grid-template-columns:60px repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
-.cal-timecol,.cal-day{background:#0f1320}
-.cal-time{height:48px;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted);padding:2px 4px}
-.cal-day{position:relative}
-.cal-hour{height:48px;border-top:1px solid var(--border)}
-.event{position:absolute;left:6px;right:6px;border-radius:8px;background:rgba(79,140,255,.2);border:1px solid rgba(79,140,255,.6);padding:4px 6px;font-size:.75rem;line-height:1.2;overflow:hidden}
-.event .title{font-weight:700}
-.event .meta{opacity:.8}
-.badge{display:inline-block;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:0 .3rem;margin-left:.3rem;font-size:.7rem}
-
-
-/* Month/Week Toggle + Layout */
+.calbar{display:flex;align-items:center;gap:.5rem;margin:8px 0 12px}
+.btn,.btn-outline{padding:.35rem .7rem;border-radius:8px;border:1px solid var(--border);background:#0f1628;color:var(--fg);cursor:pointer}
+.btn:disabled,.btn-outline:disabled{opacity:.6;cursor:not-allowed}
+.btn-outline.active{background:rgba(79,140,255,.15);border-color:rgba(79,140,255,.6)}
 .cal-mode{display:flex;gap:.25rem;margin-right:.5rem}
-.cal-mode .active{background:rgba(79,140,255,.15);border-color:rgba(79,140,255,.6)}
-.event{min-height:36px;display:flex;flex-direction:column;justify-content:center}
-.event .title,.event .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.event .meta{font-size:.72rem}
-/* Month grid */
-.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0}
-.month-header .cell{background:#0f1320;color:var(--muted);padding:.5rem;font-weight:700;font-size:.85rem;text-align:center}
+.cal-range{color:var(--muted);font-weight:700}
+
+.calhead{display:grid;grid-template-columns:120px repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0}
+.calhead .cell{background:#0f1320;color:var(--muted);padding:.5rem;text-align:center;font-weight:700}
+.calgrid{display:grid;grid-template-columns:120px repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+.cal-timecol{background:#0f1320}
+.cal-time{height:32px;padding:8px;color:var(--muted);font-size:.85rem;border-bottom:1px solid #0e1a31}
+.cal-day{position:relative;background:#0f1320}
+.cal-day .cal-hour{height:32px;border-bottom:1px dashed #0e1a31}
+.event{position:absolute;left:4px;right:4px;border:1px solid rgba(79,140,255,.5);background:rgba(79,140,255,.12);border-radius:8px;padding:6px 8px;min-height:36px;display:flex;flex-direction:column;justify-content:center}
+.badge{display:inline-block;padding:2px 6px;border:1px solid rgba(79,140,255,.6);border-radius:999px;font-size:.72rem;margin-left:6px}
+
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-bottom:0;margin-top:8px}
+.month-header .cell{background:#0f1320;color:var(--muted);padding:.5rem;text-align:center;font-weight:700}
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
 .month-cell{background:#0f1320;min-height:120px;position:relative;padding:.35rem}
 .month-cell .mday{position:absolute;top:4px;right:6px;color:var(--muted);font-size:.75rem}
 .pill{display:block;border:1px solid rgba(79,140,255,.5);background:rgba(79,140,255,.15);border-radius:6px;padding:2px 4px;margin-top:2px;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width: 900px){ .month-cell{min-height:90px} }
 
+.list-table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:6px}
+.list-table th,.list-table td{border:1px solid var(--border);padding:.45rem .6rem}
+.list-date-row td{background:#0f1320;font-weight:700}
+.list-wrap{max-height:600px;overflow:auto}
+
+/* make week grid not too tall */
+#calendar{max-height:560px;overflow:auto}
+
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border:1px solid var(--border);padding:.45rem .6rem}
+.muted{color:var(--muted)}
+footer{color:var(--muted);font-size:.85rem;margin-top:24px}
 </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <h1 class="brand">DPSA<span>Yönetim PRO</span></h1>
-      <nav class="tabs" id="tabs">
-        <a href="#dashboard" class="tab">Panel</a>
-        <a href="#students" class="tab">Öğrenciler</a>
-        <a href="#teachers" class="tab">Öğretmenler</a>
-        <a href="#courses" class="tab">Dersler/Branşlar</a>
-        <a href="#enrollments" class="tab">Kayıtlar</a>
-        <a href="#payments" class="tab">Ödemeler</a>
-        <a href="#payouts" class="tab">Öğretmen Hakediş</a>
-        <a href="#settings" class="tab">Ayarlar</a>
-      </nav>
-      <div id="authArea" class="auth"><small class="muted">Misafir</small></div>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">DPSA<span style="color:var(--brand)">Yönetim</span> PRO</div>
+    <nav id="nav">
+      <a href="#dashboard">Panel</a>
+      <a href="#students">Öğrenciler</a>
+      <a href="#teachers">Öğretmenler</a>
+      <a href="#courses">Dersler/Branşlar</a>
+      <a href="#enrollments">Kayıtlar</a>
+      <a href="#payments">Ödemeler</a>
+      <a href="#payouts">Öğretmen Hakediş</a>
+      <a href="#settings">Ayarlar</a>
+    </nav>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="page">
+    <div class="grid cards">
+      <div class="card"><h3>Öğrenci</h3><div class="kpi" id="kpiStudents">0</div></div>
+      <div class="card"><h3>Öğretmen</h3><div class="kpi" id="kpiTeachers">0</div></div>
+      <div class="card"><h3>Ders</h3><div class="kpi" id="kpiCourses">0</div></div>
+      <div class="card"><h3>Toplam Tahsilat</h3><div class="kpi" id="kpiRevenue">₺0,00</div></div>
     </div>
-  </header>
 
-  <main class="container">
-    <section id="dashboard" class="page hidden">
-      <h2>Yönetim Paneli</h2>
-      <div id="stats" class="stats"></div>
-<div class="card calendar-card"><div class="cal-head"><h3>Haftalık Takvim</h3><div class="cal-controls"><div class="cal-mode"><button class="btn-outline active" id="modeWeek">Hafta</button><button class="btn-outline" id="modeMonth">Ay</button></div><button class="btn-outline" id="calPrev">←</button><div id="calRange" class="cal-range"></div><button class="btn-outline" id="calNext">→</button><button class="btn-outline" id="calToday">Bugün</button></div></div><div class="cal-header" id="calHeader"></div><div class="calendar" id="calendar"></div><small class="muted">Format örneği: <b>Salı 17:00</b>. Süre belirtilmezse 60 dk kabul edilir.</small></div>
-      <div class="card">
-        <h3>Bu ay</h3>
-        <div id="financeSummary"></div>
-      </div>
-    </section>
-
-    <section id="students" class="page hidden">
-      <div class="page-head">
-        <h2>Öğrenciler</h2>
-        <div class="tools">
-          <input id="studentSearch" class="search" placeholder="Ara: ad, e-posta, telefon" />
-          <button class="btn" data-open="studentModal">+ Yeni Öğrenci</button>
+    <div class="card" style="margin-top:12px">
+      <div class="calbar">
+        <div class="cal-mode">
+          <button class="btn-outline active" id="modeWeek">Hafta</button>
+          <button class="btn-outline" id="modeMonth">Ay</button>
+          <button class="btn-outline" id="modeList">Liste</button>
         </div>
+        <button class="btn" id="calPrev">←</button>
+        <div class="cal-range" id="calRange">—</div>
+        <button class="btn" id="calNext">→</button>
+        <button class="btn" id="calToday" style="margin-left:auto">Bugün</button>
       </div>
-      <div id="studentTable"></div>
-    </section>
 
-    <section id="teachers" class="page hidden">
-      <div class="page-head">
-        <h2>Öğretmenler</h2>
-        <div class="tools">
-          <input id="teacherSearch" class="search" placeholder="Ara: ad, branş" />
-          <button class="btn" data-open="teacherModal">+ Yeni Öğretmen</button>
-        </div>
-      </div>
-      <div id="teacherTable"></div>
-    </section>
-
-    <section id="courses" class="page hidden">
-      <div class="page-head">
-        <h2>Dersler / Branşlar</h2>
-        <div class="tools">
-          <input id="courseSearch" class="search" placeholder="Ara: ders adı" />
-          <button class="btn" data-open="courseModal">+ Yeni Ders</button>
-        </div>
-      </div>
-      <div id="courseTable"></div>
-    </section>
-
-    <section id="enrollments" class="page hidden">
-      <div class="page-head">
-        <h2>Kayıtlar (Öğrenci ↔ Ders ↔ Öğretmen)</h2>
-        <div class="tools">
-          <input id="enrollSearch" class="search" placeholder="Ara: öğrenci, ders, öğretmen" />
-          <button class="btn" data-open="enrollModal">+ Yeni Kayıt</button>
-        </div>
-      </div>
-      <div id="enrollmentTable"></div>
-    </section>
-
-    <section id="payments" class="page hidden">
-      <div class="page-head">
-        <h2>Öğrenci Ödemeleri</h2>
-        <div class="tools">
-          <input id="paymentSearch" class="search" placeholder="Ara: öğrenci, ders" />
-          <button class="btn" data-open="paymentModal">+ Ödeme Ekle</button>
-        </div>
-      </div>
-      <div id="paymentTable"></div>
-    </section>
-
-    <section id="payouts" class="page hidden">
-      <div class="page-head">
-        <h2>Öğretmen Hakedişleri</h2>
-        <div class="tools">
-          <label class="inline">Ay: <input type="month" id="payoutMonth" /></label>
-          <button class="btn" id="recalcPayouts">↻ Yeniden Hesapla</button>
-        </div>
-      </div>
-      <div id="payoutTable"></div>
-    </section>
-
-    <section id="settings" class="page hidden">
-      <h2>Ayarlar</h2>
-      <form id="settingsForm" class="form">
-        <div class="grid2">
-          <label>Akademi Adı <input type="text" name="academyName" placeholder="Dilara Pak Sanat Akademi" /></label>
-          <label>Varsayılan Öğretmen Payı (%) <input type="number" name="defaultShare" min="0" max="100" step="1" /></label>
-        </div>
-        <button class="btn" type="submit">Kaydet</button>
-      </form>
-    </section>
-  </main>
-
-  <!-- Modals -->
-  <dialog id="studentModal" class="modal">
-    <form id="studentForm" class="form">
-      <h3>Öğrenci</h3>
-      <input type="hidden" name="id" />
-      <label>Ad Soyad <input name="name" required /></label>
-      <label>Telefon <input name="phone" /></label>
-      <label>E-posta <input type="email" name="email" /></label>
-      <menu>
-        <button class="btn-outline" type="button" data-close>Vazgeç</button>
-        <button class="btn" type="submit">Kaydet</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <dialog id="teacherModal" class="modal">
-    <form id="teacherForm" class="form">
-      <h3>Öğretmen</h3>
-      <input type="hidden" name="id" />
-      <label>Ad Soyad <input name="name" required /></label>
-      <label>Uzmanlık/Branş <input name="expertise" /></label>
-      <label>Pay Oranı (%) <input type="number" name="share" min="0" max="100" step="1" placeholder="Boşsa varsayılan"/></label>
-      <menu>
-        <button class="btn-outline" type="button" data-close>Vazgeç</button>
-        <button class="btn" type="submit">Kaydet</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <dialog id="courseModal" class="modal">
-    <form id="courseForm" class="form">
-      <h3>Ders/Branş</h3>
-      <input type="hidden" name="id" />
-      <label>Başlık <input name="title" required /></label>
-      <label>Ücret (Aylık) <input type="number" name="price" min="0" step="0.01" required /></label>
-      <menu>
-        <button class="btn-outline" type="button" data-close>Vazgeç</button>
-        <button class="btn" type="submit">Kaydet</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <dialog id="enrollModal" class="modal">
-    <form id="enrollForm" class="form">
-      <h3>Yeni Kayıt</h3>
-      <input type="hidden" name="id" />
-      <label>Öğrenci <select name="studentId" required></select></label>
-      <label>Ders <select name="courseId" required></select></label>
-      <label>Öğretmen <select name="teacherId" required></select></label>
-      <div class="grid2">
-        <label>Başlangıç <input type="date" name="startDate" required /></label>
-        <label>Pay Oranı (kayıt için, % - opsiyonel) <input type="number" name="shareOverride" min="0" max="100" step="1" /></label>
-      </div>
-      <label>Süre (dakika) <input type="number" name="duration" min="15" step="15" placeholder="60" /></label>
-      <div class="card" style="background:#0f1320;border:1px dashed var(--border)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap">
-          <strong>Tekil Ders Tarihleri (opsiyonel, en fazla 4)</strong>
-          <button class="btn-outline" type="button" id="addSession">+ Tarih/Saat Ekle</button>
-        </div>
-        <div id="sessionList" class="session-list" style="display:grid;gap:.5rem;margin-top:.5rem"></div>
-        <small class="muted">Her satıra tarih & saat ekleyin. Süre boşsa kayıt süresi (dakika) kullanılır.</small>
-      </div>
-      <label>Gün/Saat <input name="schedule" placeholder="Örn: Salı 17:00"/></label>
-      <menu>
-        <button class="btn-outline" type="button" data-close>Vazgeç</button>
-        <button class="btn" type="submit">Kaydet</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <dialog id="paymentModal" class="modal">
-    <form id="paymentForm" class="form">
-      <h3>Ödeme</h3>
-      <input type="hidden" name="id" />
-      <label>Öğrenci <select name="studentId" required></select></label>
-      <label>Ders <select name="courseId" required></select></label>
-      <div class="grid2">
-        <label>Tutar <input type="number" name="amount" min="0" step="0.01" required/></label>
-        <label>Tarih <input type="date" name="date" required/></label>
-      </div>
-      <label>Tip
-        <select name="method">
-          <option>Nakit</option>
-          <option>Kart</option>
-          <option>Havale</option>
-        </select>
-      </label>
-      <menu>
-        <button class="btn-outline" type="button" data-close>Vazgeç</button>
-        <button class="btn" type="submit">Kaydet</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <footer class="footer container">
-    <small>© <span id="year"></span> DPSA Yönetim PRO.</small>
-  </footer>
-
-  <script>
-
-document.addEventListener('DOMContentLoaded', function() {
-  try {
-    console.log('DPSA v14.1 init start');
-
-console.log('DPSA app.js v11 loaded');
-const $ = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-const TL = n => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(Number(n||0));
-$('#year').textContent = new Date().getFullYear();
-
-/* Data */
-const dataShape = () => ({
-  settings: { academyName: "Dilara Pak Sanat Akademi", defaultShare: 50 },
-  students: [], teachers: [], courses: [],
-  enrollments: [], // {id, studentId, courseId, teacherId, startDate, shareOverride?, schedule}
-  payments: []     // {id, studentId, courseId, amount, date, method}
-});
-const store = {
-  key: 'dpsa_v11',
-  load(){ try { return JSON.parse(localStorage.getItem(this.key)) || dataShape(); } catch(e){ return dataShape(); } },
-  save(d){ localStorage.setItem(this.key, JSON.stringify(d)); }
-};
-let db = store.load();
-
-/* Routing */
-function showPage(hash){
-  const target = (hash || location.hash || '#dashboard').split('?')[0];
-  $$('.page').forEach(p => p.classList.add('hidden'));
-  $$('.tabs .tab').forEach(a => a.classList.remove('active'));
-  $(target)?.classList.remove('hidden');
-  $(`.tabs .tab[href="${target}"]`)?.classList.add('active');
-  renderAll();
-}
-window.addEventListener('hashchange', ()=>showPage(location.hash));
-showPage(location.hash||'#students');
-
-/* UX: dialog close on backdrop + ESC + data-close */
-function closeDialogOnBackdrop(dlg){
-  dlg.addEventListener('click', (e)=>{
-    const rect = dlg.getBoundingClientRect();
-    const inDialog = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-    if(!inDialog) dlg.close('cancel');
-  });
-  dlg.addEventListener('keydown', (e)=>{ if(e.key==='Escape') dlg.close('cancel'); });
-}
-$$('dialog').forEach(closeDialogOnBackdrop);
-document.addEventListener('click', (e)=>{
-  const cbtn = e.target.closest('[data-close]');
-  if(cbtn){ cbtn.closest('dialog')?.close('cancel'); }
-});
-
-/* Helpers */
-/* Session rows (enroll form) */
-function addSessionRow(v={dt:'',duration:''}){
-  const wrap = document.getElementById('sessionList'); if(!wrap) return;
-  const row = document.createElement('div');
-  row.className = 'sess-row';
-  row.innerHTML = `<div class="grid2">
-      <label>Tarih & Saat <input type="datetime-local" class="sess-dt" step="900" value="${v.dt? new Date(v.dt).toISOString().slice(0,16) : ''}"></label>
-      <label>Süre (dk, opsiyonel) <input type="number" class="sess-dur" min="15" step="15" placeholder="" value="${v.duration ?? ''}"></label>
+      <div class="calhead" id="calHeader"></div>
+      <div class="calgrid" id="calendar"></div>
     </div>
-    <div><button class="btn-outline sess-del" type="button">Sil</button></div>`;
-  wrap.appendChild(row);
-  row.querySelector('.sess-del').onclick = ()=> row.remove();
-}
-function readSessions(){
-  const wrap = document.getElementById('sessionList'); if(!wrap) return [];
-  const out = [];
-  wrap.querySelectorAll('.sess-row').forEach(r=>{
-    const dt = r.querySelector('.sess-dt').value;
-    const dur = r.querySelector('.sess-dur').value;
-    if(dt){ out.push({ dt: new Date(dt).toISOString(), duration: dur? Number(dur) : null }); }
-  });
-  return out.slice(0,4);
-}
-function fillSessions(arr){
-  const wrap = document.getElementById('sessionList'); if(!wrap) return;
-  wrap.innerHTML = '';
-  (arr||[]).slice(0,4).forEach(v=> addSessionRow(v));
-}
-document.addEventListener('click', (e)=>{
-  if(e.target && e.target.id==='addSession'){ addSessionRow(); }
-});
 
+    <div class="card" style="margin-top:12px">
+      <h3>Bu ay</h3>
+      <div id="monthSummary" class="muted">—</div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="students" class="page" hidden>
+    <div class="card">
+      <h3>Öğrenciler</h3>
+      <table class="table" id="tblStudents"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- TEACHERS -->
+  <section id="teachers" class="page" hidden>
+    <div class="card">
+      <h3>Öğretmenler</h3>
+      <table class="table" id="tblTeachers"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- COURSES -->
+  <section id="courses" class="page" hidden>
+    <div class="card">
+      <h3>Dersler/Branşlar</h3>
+      <table class="table" id="tblCourses"><thead><tr><th>Ders</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- ENROLLMENTS -->
+  <section id="enrollments" class="page" hidden>
+    <div class="card">
+      <h3>Kayıtlar</h3>
+      <table class="table" id="tblEnrolls"><thead><tr><th>Öğrenci</th><th>Ders</th><th>Öğretmen</th><th>Gün/Saat</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section id="payments" class="page" hidden>
+    <div class="card">
+      <h3>Ödemeler</h3>
+      <table class="table" id="tblPayments"><thead><tr><th>Tarih</th><th>Öğrenci</th><th>Tutar</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- PAYOUTS -->
+  <section id="payouts" class="page" hidden>
+    <div class="card"><h3>Öğretmen Hakediş</h3><div class="muted">Yakında.</div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="page" hidden>
+    <div class="card"><h3>Ayarlar</h3><div class="muted">Akademi adı vb. (mevcut veriden okunur).</div></div>
+  </section>
+
+  <footer>© 2025 DPSA Yönetim PRO.</footer>
+</div>
+
+<script>
+// ----------------- Basit veri okuma -----------------
+function readDB(){
+  try{
+    const raw = localStorage.getItem('dpsa_v11');
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function currency(n){
+  try{
+    return (n||0).toLocaleString('tr-TR',{style:'currency',currency:'TRY',minimumFractionDigits:2});
+  }catch(e){ return '₺'+(n||0); }
+}
 function byId(arr, id){ return (arr||[]).find(x=>x.id===id); }
-function table(headers, rows){
-  return `<table class="table">
-    <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-    <tbody>${rows.join('') || `<tr><td colspan="${headers.length}"><i>Boş</i></td></tr>`}</tbody>
-  </table>`;
-}
-function monthKey(d){ const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
+window.byId = byId; // calendar kullanıyor
 
-/* Stats & Finance */
-function renderStats(){
-  const paid = db.payments.reduce((s,p)=>s+Number(p.amount||0),0);
-  $('#stats').innerHTML = `
-    <div class="card"><strong>Öğrenci</strong><div>${db.students.length}</div></div>
-    <div class="card"><strong>Öğretmen</strong><div>${db.teachers.length}</div></div>
-    <div class="card"><strong>Ders</strong><div>${db.courses.length}</div></div>
-    <div class="card"><strong>Toplam Tahsilat</strong><div>${TL(paid)}</div></div>`;
-
-  const mo = monthKey(new Date());
-  const exp = db.enrollments.reduce((s,e)=>{
-    const c=byId(db.courses,e.courseId); if(!c) return s; return s + Number(c.price||0);
-  },0);
-  const paidM = db.payments.filter(p=>monthKey(p.date)===mo).reduce((s,p)=>s+Number(p.amount||0),0);
-  $('#financeSummary').innerHTML = `<b>${mo}</b> Beklenen: ${TL(exp)} — Ödenen: ${TL(paidM)} — Fark: ${TL(exp-paidM)}`;
-}
-
-/* Students */
-function renderStudents(){
-  const q = ($('#studentSearch')?.value||'').toLowerCase();
-  const arr = db.students.filter(s=>[s.name,s.email,s.phone].join(' ').toLowerCase().includes(q));
-  const rows = arr.map(s=>`
-    <tr>
-      <td>${s.name}</td><td>${s.phone||''}</td><td>${s.email||''}</td>
-      <td class="row-actions">
-        <button class="btn-outline" data-edit-student="${s.id}">Düzenle</button>
-        <button class="btn-outline" data-del-student="${s.id}">Sil</button>
-      </td>
-    </tr>`);
-  $('#studentTable').innerHTML = table(['Ad Soyad','Telefon','E-posta',''], rows);
-  $$('#studentTable [data-edit-student]').forEach(b=>b.onclick=()=>openStudent(byId(db.students,b.dataset.editStudent)));
-  $$('#studentTable [data-del-student]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){ 
-    db.enrollments = db.enrollments.filter(e=>e.studentId!==b.dataset.delStudent);
-    db.payments = db.payments.filter(p=>p.studentId!==b.dataset.delStudent);
-    db.students = db.students.filter(x=>x.id!==b.dataset.delStudent);
-    store.save(db); renderAll(); } });
-}
-$('#studentSearch')?.addEventListener('input', ()=>renderStudents());
-
-function openStudent(data){
-  const dlg = $('#studentModal'), f = $('#studentForm'); f.reset();
-  if(data){ f.id.value=data.id; f.name.value=data.name; f.phone.value=data.phone||''; f.email.value=data.email||''; }
-  dlg.showModal();
-}
-$('#studentForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const f = e.target;
-  const item = { id:f.id.value||uid(), name:f.name.value.trim(), phone:f.phone.value.trim(), email:f.email.value.trim() };
-  if(!item.name) return;
-  const i = db.students.findIndex(x=>x.id===item.id);
-  if(i>-1) db.students[i]=item; else db.students.push(item);
-  store.save(db); $('#studentModal').close('submit'); renderAll();
-});
-
-/* Teachers */
-function renderTeachers(){
-  const q = ($('#teacherSearch')?.value||'').toLowerCase();
-  const arr = db.teachers.filter(t=>[t.name,t.expertise].join(' ').toLowerCase().includes(q));
-  const rows = arr.map(t=>`
-    <tr>
-      <td>${t.name}</td><td>${t.expertise||''}</td><td>${t.share ?? ''}</td>
-      <td class="row-actions">
-        <button class="btn-outline" data-edit-teacher="${t.id}">Düzenle</button>
-        <button class="btn-outline" data-del-teacher="${t.id}">Sil</button>
-      </td>
-    </tr>`);
-  $('#teacherTable').innerHTML = table(['Ad Soyad','Uzmanlık','Pay (%)',''], rows);
-  $$('#teacherTable [data-edit-teacher]').forEach(b=>b.onclick=()=>openTeacher(byId(db.teachers,b.dataset.editTeacher)));
-  $$('#teacherTable [data-del-teacher]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){
-    db.enrollments = db.enrollments.filter(e=>e.teacherId!==b.dataset.delTeacher);
-    db.teachers = db.teachers.filter(x=>x.id!==b.dataset.delTeacher);
-    store.save(db); renderAll(); } });
-}
-$('#teacherSearch')?.addEventListener('input', ()=>renderTeachers());
-
-function openTeacher(data){
-  const dlg=$('#teacherModal'), f=$('#teacherForm'); f.reset();
-  if(data){ f.id.value=data.id; f.name.value=data.name; f.expertise.value=data.expertise||''; f.share.value=(data.share ?? ''); }
-  dlg.showModal();
-}
-$('#teacherForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const f=e.target;
-  const item={ id:f.id.value||uid(), name:f.name.value.trim(), expertise:f.expertise.value.trim(), share: f.share.value===''? null : Number(f.share.value) };
-  if(!item.name) return;
-  const i=db.teachers.findIndex(x=>x.id===item.id);
-  if(i>-1) db.teachers[i]=item; else db.teachers.push(item);
-  store.save(db); $('#teacherModal').close('submit'); renderAll();
-});
-
-/* Courses */
-function renderCourses(){
-  const q = ($('#courseSearch')?.value||'').toLowerCase();
-  const arr = db.courses.filter(c=>c.title.toLowerCase().includes(q));
-  const rows = arr.map(c=>`
-    <tr>
-      <td>${c.title}</td><td>${TL(c.price)}</td>
-      <td class="row-actions">
-        <button class="btn-outline" data-edit-course="${c.id}">Düzenle</button>
-        <button class="btn-outline" data-del-course="${c.id}">Sil</button>
-      </td>
-    </tr>`);
-  $('#courseTable').innerHTML = table(['Ders','Ücret (Aylık)',''], rows);
-  $$('#courseTable [data-edit-course]').forEach(b=>b.onclick=()=>openCourse(byId(db.courses,b.dataset.editCourse)));
-  $$('#courseTable [data-del-course]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){
-    db.payments = db.payments.filter(p=>p.courseId!==b.dataset.delCourse);
-    db.enrollments = db.enrollments.filter(e=>e.courseId!==b.dataset.delCourse);
-    db.courses = db.courses.filter(x=>x.id!==b.dataset.delCourse);
-    store.save(db); renderAll(); } });
-}
-$('#courseSearch')?.addEventListener('input', ()=>renderCourses());
-
-function openCourse(data){
-  const dlg=$('#courseModal'), f=$('#courseForm'); f.reset();
-  if(data){ f.id.value=data.id; f.title.value=data.title; f.price.value=data.price; }
-  dlg.showModal();
-}
-$('#courseForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const f=e.target;
-  const item={ id:f.id.value||uid(), title:f.title.value.trim(), price:Number(f.price.value||0) };
-  if(!item.title) return;
-  const i=db.courses.findIndex(x=>x.id===item.id);
-  if(i>-1) db.courses[i]=item; else db.courses.push(item);
-  store.save(db); $('#courseModal').close('submit'); renderAll();
-});
-
-/* Enrollments */
-function renderEnrollmentOptions(){
-  const sf=$('#enrollForm'); const pf=$('#paymentForm');
-  if(sf){
-    sf.studentId.innerHTML = db.students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-    sf.teacherId.innerHTML = db.teachers.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
-    sf.courseId.innerHTML = db.courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
-  }
-  if(pf){
-    pf.studentId.innerHTML = db.students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-    pf.courseId.innerHTML = db.courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
-  }
-}
-function renderEnrollments(){
-  renderEnrollmentOptions();
-  const q = ($('#enrollSearch')?.value||'').toLowerCase();
-  const rows = db.enrollments.filter(e=>{
-    const s=byId(db.students,e.studentId)?.name||'';
-    const c=byId(db.courses,e.courseId)?.title||'';
-    const t=byId(db.teachers,e.teacherId)?.name||'';
-    return [s,c,t].join(' ').toLowerCase().includes(q);
-  }).map(e=>{
-    const st=byId(db.students,e.studentId)?.name||'-';
-    const co=byId(db.courses,e.courseId)?.title||'-';
-    const te=byId(db.teachers,e.teacherId)?.name||'-';
-    const sessTxt = (e.sessions||[]).map(s=>{ try{ const d=new Date(s.dt); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }catch(_){ return '' } }).join(', ');
-    return `<tr>
-      <td>${st}</td><td>${co}</td><td>${te}</td><td>${e.startDate||''}</td><td>${e.schedule||''}</td><td>${sessTxt}</td><td>${e.duration ?? 60}</td><td>${e.shareOverride ?? ''}</td>
-      <td class="row-actions">
-        <button class="btn-outline" data-edit-enroll="${e.id}">Düzenle</button>
-        <button class="btn-outline" data-del-enroll="${e.id}">Sil</button>
-      </td>
-    </tr>`;
-  });
-  $('#enrollmentTable').innerHTML = table(['Öğrenci','Ders','Öğretmen','Başlangıç','Plan','Tekil Tarihler','Süre (dk)','Pay % (kayıt)',''], rows);
-  $$('#enrollmentTable [data-edit-enroll]').forEach(b=>b.onclick=()=>openEnroll(byId(db.enrollments,b.dataset.editEnroll)));
-  $$('#enrollmentTable [data-del-enroll]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){
-    db.enrollments = db.enrollments.filter(x=>x.id!==b.dataset.delEnroll);
-    store.save(db); renderAll(); } });
-}
-function openEnroll(data){
-  const dlg=$('#enrollModal'), f=$('#enrollForm'); f.reset(); renderEnrollmentOptions();
-  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.teacherId.value=data.teacherId; f.courseId.value=data.courseId; f.startDate.value=data.startDate||''; f.schedule.value=data.schedule||''; f.shareOverride.value=(data.shareOverride ?? ''); }
-  dlg.showModal();
-}
-$('#enrollForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const f=e.target;
-  const newId = (f.id.value && f.id.value.trim()) ? f.id.value.trim() : uid();
-  const item={ id:newId, studentId:f.studentId.value, teacherId:f.teacherId.value, courseId:f.courseId.value, startDate:f.startDate.value, schedule:f.schedule.value.trim(), shareOverride: f.shareOverride.value===''? null : Number(f.shareOverride.value), duration: f.duration.value===''? 60 : Number(f.duration.value), sessions: readSessions() };
-  const i=db.enrollments.findIndex(x=>x.id===item.id);
-  if(i>-1) db.enrollments[i]=item; else db.enrollments.push(item);
-  store.save(db); $('#enrollModal').close('submit'); renderAll();
-});
-
-/* Payments */
-function renderPayments(){
-  const q = ($('#paymentSearch')?.value||'').toLowerCase();
-  const rows = db.payments.filter(p=>{
-    const s=byId(db.students,p.studentId)?.name||'';
-    const c=byId(db.courses,p.courseId)?.title||'';
-    return `${s} ${c}`.toLowerCase().includes(q);
-  }).map(p=>{
-    const s=byId(db.students,p.studentId)?.name||'-';
-    const c=byId(db.courses,p.courseId)?.title||'-';
-    return `<tr>
-      <td>${p.date}</td><td>${s}</td><td>${c}</td><td>${p.method}</td><td>${TL(p.amount)}</td>
-      <td class="row-actions">
-        <button class="btn-outline" data-edit-payment="${p.id}">Düzenle</button>
-        <button class="btn-outline" data-del-payment="${p.id}">Sil</button>
-      </td>
-    </tr>`;
-  });
-  $('#paymentTable').innerHTML = table(['Tarih','Öğrenci','Ders','Tip','Tutar',''], rows);
-  $$('#paymentTable [data-edit-payment]').forEach(b=>b.onclick=()=>openPayment(byId(db.payments,b.dataset.editPayment)));
-  $$('#paymentTable [data-del-payment]').forEach(b=>b.onclick=()=>{ if(confirm('Silinsin mi?')){
-    db.payments = db.payments.filter(x=>x.id!==b.dataset.delPayment);
-    store.save(db); renderAll(); } });
-}
-function openPayment(data){
-  const dlg=$('#paymentModal'), f=$('#paymentForm'); f.reset(); renderEnrollmentOptions();
-  if(data){ f.id.value=data.id; f.studentId.value=data.studentId; f.courseId.value=data.courseId; f.amount.value=data.amount; f.date.value=data.date; f.method.value=data.method; }
-  dlg.showModal();
-}
-$('#paymentForm').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const f=e.target;
-  const item={ id:f.id.value||uid(), studentId:f.studentId.value, courseId:f.courseId.value, amount:Number(f.amount.value||0), date:f.date.value, method:f.method.value };
-  const i=db.payments.findIndex(x=>x.id===item.id);
-  if(i>-1) db.payments[i]=item; else db.payments.push(item);
-  store.save(db); $('#paymentModal').close('submit'); renderAll();
-});
-
-/* Payouts */
-function teacherShareForEnrollment(enroll){
-  if(enroll.shareOverride!=null && enroll.shareOverride!=='') return Number(enroll.shareOverride)/100;
-  const t = byId(db.teachers, enroll.teacherId);
-  if(t && t.share!=null && t.share!=='') return Number(t.share)/100;
-  return Number(db.settings.defaultShare||50)/100;
-}
-function calcPayouts(filterMonth=null){
-  const totals = {}; // teacherId -> amount
-  for(const p of db.payments){
-    const mo = monthKey(p.date);
-    if(filterMonth && mo!==filterMonth) continue;
-    const relEnrolls = db.enrollments.filter(e=>e.studentId===p.studentId && e.courseId===p.courseId);
-    if(relEnrolls.length===0) continue;
-    const perEnroll = Number(p.amount||0)/relEnrolls.length;
-    for(const e of relEnrolls){
-      const share = teacherShareForEnrollment(e);
-      totals[e.teacherId] = (totals[e.teacherId]||0) + perEnroll*share;
-    }
-  }
-  return totals;
-}
-function renderPayouts(){
-  const mo = $('#payoutMonth').value || monthKey(new Date());
-  const totals = calcPayouts(mo);
-  const rows = Object.entries(totals).map(([tid,amt])=>{
-    const t = byId(db.teachers, tid);
-    return `<tr><td>${t?.name||'-'}</td><td>${TL(amt)}</td></tr>`;
-  });
-  $('#payoutTable').innerHTML = table(['Öğretmen','Hakediş'], rows);
-}
-$('#recalcPayouts')?.addEventListener('click', renderPayouts);
-
-/* Settings */
-function renderSettings(){
-  const f=$('#settingsForm');
-  f.academyName.value = db.settings.academyName;
-  f.defaultShare.value = db.settings.defaultShare;
-  f.onsubmit = (e)=>{
-    e.preventDefault();
-    db.settings.academyName = f.academyName.value || "Dilara Pak Sanat Akademi";
-    db.settings.defaultShare = Number(f.defaultShare.value||50);
-    store.save(db); alert('Ayarlar kaydedildi');
+// --- demo veri (sadece ilk açılışta yoksa) ---
+(function ensureDemo(){
+  if(localStorage.getItem('dpsa_v11')) return;
+  const now = new Date();
+  const monday = getMonday(now);
+  const d1 = new Date(monday); d1.setDate(monday.getDate()+1); d1.setHours(13,0,0,0); // Sal 13:00
+  const d2 = new Date(monday); d2.setDate(monday.getDate()+3); d2.setHours(19,0,0,0); // Per 19:00
+  const db = {
+    settings:{academyName:'DILARA PAK SANAT AKADEMİ', defaultShare:50},
+    students:[{id:'s1',name:'AHMET'},{id:'s2',name:'KORCAN'},{id:'s3',name:'MERVE'},{id:'s4',name:'VELİ'}],
+    teachers:[{id:'t1',name:'TUTKU'},{id:'t2',name:'DİLARA'},{id:'t3',name:'AYŞE'}],
+    courses:[{id:'c1',title:'PİYANO'},{id:'c2',title:'KEMAN'},{id:'c3',title:'GİTAR'}],
+    enrollments:[
+      {id:'e1',studentId:'s1',courseId:'c1',teacherId:'t1',schedule:'Salı 13:00',duration:60,sessions:[{dt:d1.toISOString()}]},
+      {id:'e2',studentId:'s2',courseId:'c1',teacherId:'t2',schedule:'Salı 15:00',duration:60},
+      {id:'e3',studentId:'s3',courseId:'c2',teacherId:'t3',schedule:'Perşembe 16:00',duration:60,sessions:[{dt:d2.toISOString()}]},
+    ],
+    payments:[{id:'p1',studentId:'s1',amount:7800,date:now.toISOString()}]
   };
+  localStorage.setItem('dpsa_v11', JSON.stringify(db));
+})();
+
+// ----------------- Sayfalar -----------------
+function setActiveNav(){
+  const h = location.hash || '#dashboard';
+  document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active', a.getAttribute('href')===h));
+}
+function showPage(){
+  const h = location.hash || '#dashboard';
+  document.querySelectorAll('.page').forEach(el=>el.hidden = ('#'+el.id)!==h);
+  setActiveNav();
 }
 
-/* Render all */
+function renderCounts(db){
+  document.getElementById('kpiStudents').textContent = (db.students||[]).length;
+  document.getElementById('kpiTeachers').textContent = (db.teachers||[]).length;
+  document.getElementById('kpiCourses').textContent = (db.courses||[]).length;
+  const m = new Date(); const ym = m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0');
+  const sum = (db.payments||[]).filter(p=> (p.date||'').startsWith(ym)).reduce((a,b)=>a+Number(b.amount||0),0);
+  document.getElementById('kpiRevenue').textContent = currency(sum);
+  document.getElementById('monthSummary').textContent = `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')} Toplam: ${currency(sum)}`;
+}
+
+function renderTables(db){
+  // Students
+  const sBody = document.querySelector('#tblStudents tbody'); sBody.innerHTML='';
+  (db.students||[]).forEach(s=> sBody.innerHTML += `<tr><td>${s.name||''}</td><td>${s.phone||''}</td><td>${s.email||''}</td></tr>`);
+  // Teachers
+  const tBody = document.querySelector('#tblTeachers tbody'); tBody.innerHTML='';
+  (db.teachers||[]).forEach(t=> tBody.innerHTML += `<tr><td>${t.name||''}</td><td>${t.phone||''}</td><td>${t.email||''}</td></tr>`);
+  // Courses
+  const cBody = document.querySelector('#tblCourses tbody'); cBody.innerHTML='';
+  (db.courses||[]).forEach(c=> cBody.innerHTML += `<tr><td>${c.title||''}</td></tr>`);
+  // Enrollments
+  const eBody = document.querySelector('#tblEnrolls tbody'); eBody.innerHTML='';
+  (db.enrollments||[]).forEach(e=>{
+    const stu = byId(db.students,e.studentId)?.name||'';
+    const tea = byId(db.teachers,e.teacherId)?.name||'';
+    const cou = byId(db.courses, e.courseId )?.title||'';
+    eBody.innerHTML += `<tr><td>${stu}</td><td>${cou}</td><td>${tea}</td><td>${e.schedule||''}</td></tr>`;
+  });
+  // Payments
+  const pBody = document.querySelector('#tblPayments tbody'); pBody.innerHTML='';
+  (db.payments||[]).forEach(p=>{
+    const stu = byId(db.students,p.studentId)?.name||'';
+    pBody.innerHTML += `<tr><td>${(p.date||'').slice(0,10)}</td><td>${stu}</td><td>${currency(p.amount||0)}</td></tr>`;
+  });
+}
+
+// Master render
 function renderAll(){
-  renderStats();
-  renderStudents();
-  renderTeachers();
-  renderCourses();
-  renderEnrollments();
-  renderPayments();
-  renderPayouts();
-  renderSettings();
+  const db = readDB() || {students:[],teachers:[],courses:[],enrollments:[],payments:[]};
+  window.db = db; // calendar okur
+  showPage();
+  renderCounts(db);
+  renderTables(db);
 }
+window.renderAll = renderAll;
+window.addEventListener('hashchange', renderAll);
 
-/* Open modal buttons (event delegation) */
-document.addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-open]');
-  if(!btn) return;
-  const id = btn.getAttribute('data-open');
-  if(id==='studentModal') return openStudent();
-  if(id==='teacherModal') return openTeacher();
-  if(id==='courseModal') return openCourse();
-  if(id==='enrollModal') return openEnroll();
-  if(id==='paymentModal') return openPayment();
-});
-
-/* ===== Calendar (weekly) ===== */
-const DAY_NAMES = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-const DAY_MAP = {
-  'pazartesi':0,'pzt':0,'pzt.':0,
-  'salı':1,'sali':1,'sal':1,'sal.':1,
-  'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,
-  'perşembe':3,'persembe':3,'per':3,'per.':3,
-  'cuma':4,'cum':4,'cum.':4,
-  'cumartesi':5,'cmt':5,'cmt.':5,
-  'pazar':6,'paz':6,'paz.':6
-};
-let calWeekStart = getMonday(new Date());
-function getMonday(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
-function fmtDate(d){ return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`; }
-
-function parseSchedule(s){
-  if(!s) return null;
-  let txt = (s+'').toLowerCase().replace(/\./g,':').trim();
-  let dow = null;
-  for(const k in DAY_MAP){ if(txt.includes(k)){ dow = DAY_MAP[k]; break; } }
-  const m = txt.match(/(\d{1,2})[:](\d{2})/);
-  const m2 = !m && txt.match(/(\d{1,2})\s*$/);
-  let hh=17, mm=0;
-  if(m){ hh = Number(m[1]); mm = Number(m[2]); }
-  else if(m2){ hh = Number(m2[1]); mm = 0; }
-  return (dow==null)? null : { dow, hh, mm };
-}
-
-function renderCalendar(){
-  const header = document.getElementById('calHeader');
-  const grid = document.getElementById('calendar');
-  if(!header || !grid) return;
-  const start = new Date(calWeekStart);
-  const end = new Date(calWeekStart); end.setDate(end.getDate()+6);
-  document.getElementById('calRange').textContent = `${fmtDate(start)} – ${fmtDate(end)}`;
-
-  const days = [null];
-  for(let i=0;i<7;i++){
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    days.push(`<div class="cell">${DAY_NAMES[i]} ${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}</div>`);
-  }
-  header.innerHTML = days.join('');
-
-  const HSTART=8, HEND=22, H=48;
-  let timeCol = '<div class="cal-timecol">';
-  for(let h=HSTART; h<=HEND; h++){ timeCol += `<div class="cal-time">${String(h).padStart(2,'0')}:00</div>`; }
-  timeCol += '</div>';
-  const dayCols = [];
-  for(let i=0;i<7;i++){
-    let col = '<div class="cal-day" style="height:' + ((HEND-HSTART+1)*H) + 'px">';
-    for(let h=HSTART; h<=HEND; h++){ col += `<div class="cal-hour"></div>`; }
-    for(const e of db.enrollments){
-      // Sessions (exact dates)
-      const sessions = (e.sessions||[]).map(s=>{ try{ return {d:new Date(s.dt), dur: (s.duration ?? e.duration ?? 60)} }catch(_){ return null } }).filter(Boolean);
-      for(const s of sessions){
-        const test = new Date(start); test.setDate(start.getDate()+i);
-        if(s.d.getFullYear()===test.getFullYear() && s.d.getMonth()===test.getMonth() && s.d.getDate()===test.getDate()){
-          const top = ((s.d.getHours() - HSTART) * H) + (s.d.getMinutes()/60)*H;
-          const height = Math.max(24, H * (Number(s.dur)/60));
-          const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
-          const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
-          const cou = byId(db.courses, e.courseId)?.title || 'Ders';
-          col += `<div class="event" style="top:${top}px;height:${height}px">
-            <div class="title">${stu} <span class="badge">${cou}</span></div>
-            <div class="meta">${tea} · ${String(s.d.getHours()).padStart(2,'0')}:${String(s.d.getMinutes()).padStart(2,'0')}</div>
-          </div>`;
-        }
-      }
-      // Recurring schedule
-      const parsed = parseSchedule(e.schedule);
-      if(parsed && parsed.dow===i){
-        const dur = Number(e.duration||60);
-        const top = ((parsed.hh - HSTART) * H) + (parsed.mm/60)*H;
-        const height = Math.max(24, H * (dur/60));
-        const stu = byId(db.students, e.studentId)?.name || 'Öğrenci';
-        const tea = byId(db.teachers, e.teacherId)?.name || 'Öğretmen';
-        const cou = byId(db.courses, e.courseId)?.title || 'Ders';
-        col += `<div class="event" style="top:${top}px;height:${height}px">
-          <div class="title">${stu} <span class="badge">${cou}</span></div>
-          <div class="meta">${tea} · ${String(parsed.hh).padStart(2,'0')}:${String(parsed.mm).padStart(2,'0')}</div>
-        </div>`;
-      }
-    }
-    col += '</div>';
-    dayCols.push(col);
-  }
-  grid.innerHTML = timeCol + dayCols.join('');
-}
-document.getElementById('calPrev')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()-7); renderCalendar(); });
-document.getElementById('calNext')?.addEventListener('click', ()=>{ calWeekStart.setDate(calWeekStart.getDate()+7); renderCalendar(); });
-document.getElementById('calToday')?.addEventListener('click', ()=>{ calWeekStart = getMonday(new Date()); renderCalendar(); });
-
-// Hook into renderAll
-const _renderAll = renderAll;
-renderAll = function(){ _renderAll(); renderCalendar(); };
-
-    if (typeof showPage === 'function') showPage(location.hash||'#dashboard');
-    console.log('DPSA v14.1 init done');
-  } catch(err) {
-    console.error('DPSA v14.1 init error:', err);
-  }
-});
-
-
-/* === DPSA Calendar v15.8 (isolated) === */
+// -------------------------------------------------------------
+// === TAKVİM v15.9 (Hafta / Ay / Liste)  ===
 (function(){
-  // State
   let DPSA_CAL_mode = 'week';
-  let DPSA_CAL_ref = new Date();
+  let DPSA_CAL_ref  = new Date();
 
-  // Helpers
-  const fmt2 = n => String(n).padStart(2,'0');
+  const fmt2  = n => String(n).padStart(2,'0');
   const fmtHM = (h,m) => `${fmt2(h)}:${fmt2(m)}`;
-  const getMonday = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; };
+  window.getMonday = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; };
   const DAY_SHORT2 = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
   const DAY_MAP2 = { 'pazartesi':0,'pzt':0,'pzt.':0,'salı':1,'sali':1,'sal':1,'sal.':1,'çarşamba':2,'carsamba':2,'çar':2,'car':2,'çar.':2,'car.':2,'perşembe':3,'persembe':3,'per':3,'per.':3,'cuma':4,'cum':4,'cum.':4,'cumartesi':5,'cmt':5,'cmt.':5,'pazar':6,'paz':6,'paz.':6 };
+
   function parseSchedule2(s){
     if(!s) return null;
     let t=(s+'').toLowerCase().replace(/\./g,':').trim(); let dow=null;
@@ -789,159 +283,180 @@ renderAll = function(){ _renderAll(); renderCalendar(); };
     return dow==null? null : { dow, hh, mm };
   }
   function readSessions2(e){
-    // returns [{d:Date, dur:Number}, ...]
-    const arr = (e.sessions||[]).map(s => {
-      const d = new Date(s.dt);
-      if (isNaN(d.getTime())) return null;
-      const dur = (s.duration ?? e.duration ?? 60);
-      return { d, dur };
+    return (e.sessions||[]).map(s=>{
+      const d=new Date(s.dt); if(isNaN(d)) return null;
+      return { d, dur:(s.duration ?? e.duration ?? 60) };
     }).filter(Boolean);
-    return arr;
   }
 
-  // Rendering
   function renderWeek2(){
-    const header = document.getElementById('calHeader');
-    const grid = document.getElementById('calendar');
-    const range = document.getElementById('calRange');
-    if(!header || !grid || !range) return;
+    const header=document.getElementById('calHeader'), grid=document.getElementById('calendar'), range=document.getElementById('calRange');
+    if(!header||!grid||!range) return;
     header.style.display='grid'; grid.style.display='grid';
     document.getElementById('monthHeader')?.remove();
     document.getElementById('monthGrid')?.remove();
 
     const start = getMonday(DPSA_CAL_ref);
-    const end = new Date(start); end.setDate(end.getDate()+6);
+    const end   = new Date(start); end.setDate(end.getDate()+6);
     range.textContent = `${fmt2(start.getDate())}.${fmt2(start.getMonth()+1)} – ${fmt2(end.getDate())}.${fmt2(end.getMonth()+1)}`;
 
     const days=[null];
     for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push(`<div class="cell">${DAY_SHORT2[i]} ${fmt2(d.getDate())}.${fmt2(d.getMonth()+1)}</div>`); }
     header.innerHTML = days.join('');
 
-    const HSTART=8, HEND=22, H=48;
+    const HSTART=9, HEND=21, H=32;
     let timeCol = '<div class="cal-timecol">';
     for(let h=HSTART; h<=HEND; h++){ timeCol += `<div class="cal-time">${fmt2(h)}:00</div>`; }
     timeCol += '</div>';
-
     const dayCols=[];
+
     for(let i=0;i<7;i++){
       let col = `<div class="cal-day" style="height:${(HEND-HSTART+1)*H}px">`;
       for(let h=HSTART; h<=HEND; h++){ col += '<div class="cal-hour"></div>'; }
-      for(const e of (window.db?.enrollments || [])){
-        // Sessions
-        const sessions = readSessions2(e);
-        for(const s of sessions){
-          const d0 = new Date(start); d0.setDate(start.getDate()+i);
-          if (s.d.toDateString() === d0.toDateString()){
-            const top = ((s.d.getHours()-HSTART)*H) + (s.d.getMinutes()/60)*H;
-            const height = Math.max(36, H*(Number(s.dur)/60));
-            const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
-            const tea = (window.byId?.(window.db?.teachers, e.teacherId)?.name) || 'Öğretmen';
-            const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+      for(const e of (window.db?.enrollments||[])){
+        for(const s of readSessions2(e)){
+          const d0=new Date(start); d0.setDate(start.getDate()+i);
+          if(s.d.toDateString()===d0.toDateString()){
+            const top=((s.d.getHours()-HSTART)*H)+(s.d.getMinutes()/60)*H;
+            const height=Math.max(36,H*(Number(s.dur)/60));
+            const stu=(byId(window.db?.students,e.studentId)?.name)||'Öğrenci';
+            const tea=(byId(window.db?.teachers,e.teacherId)?.name)||'Öğretmen';
+            const cou=(byId(window.db?.courses, e.courseId )?.title)||'Ders';
             col += `<div class="event" style="top:${top}px;height:${height}px">
               <div class="title">${stu} <span class="badge">${cou}</span></div>
               <div class="meta">${tea} · ${fmtHM(s.d.getHours(), s.d.getMinutes())}</div>
             </div>`;
           }
         }
-        // Recurring
-        const p = parseSchedule2(e.schedule);
+        const p=parseSchedule2(e.schedule);
         if(p && p.dow===i){
-          const dur = Number(e.duration||60);
-          const top = ((p.hh-HSTART)*H) + (p.mm/60)*H;
-          const height = Math.max(36, H*(dur/60));
-          const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
-          const tea = (window.byId?.(window.db?.teachers, e.teacherId)?.name) || 'Öğretmen';
-          const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+          const top=((p.hh-HSTART)*H)+(p.mm/60)*H;
+          const height=Math.max(36,H*(Number(e.duration||60)/60));
+          const stu=(byId(window.db?.students,e.studentId)?.name)||'Öğrenci';
+          const tea=(byId(window.db?.teachers,e.teacherId)?.name)||'Öğretmen';
+          const cou=(byId(window.db?.courses, e.courseId )?.title)||'Ders';
           col += `<div class="event" style="top:${top}px;height:${height}px">
             <div class="title">${stu} <span class="badge">${cou}</span></div>
             <div class="meta">${tea} · ${fmtHM(p.hh, p.mm)}</div>
           </div>`;
         }
       }
-      col += '</div>';
-      dayCols.push(col);
+      col+='</div>'; dayCols.push(col);
     }
     grid.innerHTML = timeCol + dayCols.join('');
   }
 
   function renderMonth2(){
-    const container = document.getElementById('calendar');
-    const header = document.getElementById('calHeader');
-    const range = document.getElementById('calRange');
-    if(!container || !header || !range) return;
-
+    const container=document.getElementById('calendar'), header=document.getElementById('calHeader'), range=document.getElementById('calRange');
+    if(!container||!header||!range) return;
     header.style.display='none'; container.style.display='block';
     document.getElementById('monthHeader')?.remove();
     document.getElementById('monthGrid')?.remove();
 
-    // Month header
-    const mh = document.createElement('div'); mh.id='monthHeader'; mh.className='month-header';
+    const mh=document.createElement('div'); mh.id='monthHeader'; mh.className='month-header';
     for(let i=0;i<7;i++){ mh.innerHTML += `<div class="cell">${DAY_SHORT2[i]}</div>`; }
     header.parentNode.insertBefore(mh, container);
 
-    const first = new Date(DPSA_CAL_ref.getFullYear(), DPSA_CAL_ref.getMonth(), 1);
-    const start = getMonday(first);
-    const grid = document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
+    const first=new Date(DPSA_CAL_ref.getFullYear(), DPSA_CAL_ref.getMonth(),1);
+    const start=getMonday(first);
+    const grid=document.createElement('div'); grid.id='monthGrid'; grid.className='month-grid';
 
     for(let i=0;i<42;i++){
-      const d = new Date(start); d.setDate(start.getDate()+i);
-      const cell = document.createElement('div'); cell.className='month-cell';
-      const inMonth = d.getMonth()===DPSA_CAL_ref.getMonth();
-      cell.innerHTML = `<div class="mday" style="opacity:${inMonth?1:.5}">${fmt2(d.getDate())}</div>`;
+      const d=new Date(start); d.setDate(start.getDate()+i);
+      const inMonth=d.getMonth()===DPSA_CAL_ref.getMonth();
+      const cell=document.createElement('div'); cell.className='month-cell';
+      cell.innerHTML=`<div class="mday" style="opacity:${inMonth?1:.5}">${fmt2(d.getDate())}</div>`;
 
-      for(const e of (window.db?.enrollments || [])){
-        // Sessions
-        const sessions = readSessions2(e);
-        for(const s of sessions){
-          if (s.d.toDateString() === d.toDateString()){
-            const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
-            const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+      for(const e of (window.db?.enrollments||[])){
+        for(const s of readSessions2(e)){
+          if(s.d.toDateString()===d.toDateString()){
+            const stu=(byId(window.db?.students,e.studentId)?.name)||'';
+            const cou=(byId(window.db?.courses, e.courseId )?.title)||'';
             cell.innerHTML += `<span class="pill">${fmtHM(s.d.getHours(), s.d.getMinutes())} · ${stu} <span class="badge">${cou}</span></span>`;
           }
         }
-        // Recurring
-        const p = parseSchedule2(e.schedule);
-        const dow = (d.getDay()+6)%7;
+        const p=parseSchedule2(e.schedule);
+        const dow=(d.getDay()+6)%7;
         if(p && p.dow===dow){
-          const stu = (window.byId?.(window.db?.students, e.studentId)?.name) || 'Öğrenci';
-          const cou = (window.byId?.(window.db?.courses, e.courseId)?.title) || 'Ders';
+          const stu=(byId(window.db?.students,e.studentId)?.name)||'';
+          const cou=(byId(window.db?.courses, e.courseId )?.title)||'';
           cell.innerHTML += `<span class="pill">${fmtHM(p.hh, p.mm)} · ${stu} <span class="badge">${cou}</span></span>`;
         }
       }
       grid.appendChild(cell);
     }
     container.parentNode.insertBefore(grid, container.nextSibling);
-    range.textContent = new Date(DPSA_CAL_ref).toLocaleDateString('tr-TR', {month:'long', year:'numeric'});
+    range.textContent = new Date(DPSA_CAL_ref).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+  }
+
+  function renderList2(){
+    const container=document.getElementById('calendar'), header=document.getElementById('calHeader'), range=document.getElementById('calRange');
+    if(!container||!header||!range) return;
+    header.style.display='none'; container.style.display='block';
+    document.getElementById('monthHeader')?.remove();
+    document.getElementById('monthGrid')?.remove();
+
+    const start=getMonday(DPSA_CAL_ref);
+    const end=new Date(start); end.setDate(end.getDate()+6);
+    range.textContent=`${fmt2(start.getDate())}.${fmt2(start.getMonth()+1)} – ${fmt2(end.getDate())}.${fmt2(end.getMonth()+1)}`;
+
+    const rows=[];
+    for(const e of (window.db?.enrollments||[])){
+      for(const s of readSessions2(e)){
+        if(s.d>=start && s.d<=new Date(end.getFullYear(),end.getMonth(),end.getDate(),23,59,59)){
+          rows.push({dt:s.d,student:(byId(window.db?.students,e.studentId)?.name)||'',course:(byId(window.db?.courses,e.courseId)?.title)||'',teacher:(byId(window.db?.teachers,e.teacherId)?.name)||''});
+        }
+      }
+    }
+    for(let i=0;i<7;i++){
+      const day=new Date(start); day.setDate(start.getDate()+i);
+      for(const e of (window.db?.enrollments||[])){
+        const p=parseSchedule2(e.schedule); if(!p || p.dow!==i) continue;
+        const dt=new Date(day.getFullYear(),day.getMonth(),day.getDate(),p.hh,p.mm);
+        rows.push({dt,student:(byId(window.db?.students,e.studentId)?.name)||'',course:(byId(window.db?.courses,e.courseId)?.title)||'',teacher:(byId(window.db?.teachers,e.teacherId)?.name)||''});
+      }
+    }
+    rows.sort((a,b)=> a.dt-b.dt || a.student.localeCompare(b.student));
+
+    let html='<div class="list-wrap"><table class="list-table">';
+    html+='<thead><tr><th style="width:140px">TARİH</th><th style="width:90px">SAAT</th><th>ÖĞRENCİ</th><th>DERS</th><th>ÖĞRETMEN</th></tr></thead><tbody>';
+    let last=null;
+    for(const r of rows){
+      const dkey=`${fmt2(r.dt.getDate())}.${fmt2(r.dt.getMonth()+1)}.${r.dt.getFullYear()}`;
+      if(dkey!==last){ html+=`<tr class="list-date-row"><td colspan="5">${dkey}</td></tr>`; last=dkey; }
+      html+=`<tr><td></td><td>${fmt2(r.dt.getHours())}.${fmt2(r.dt.getMinutes())}</td><td>${r.student}</td><td>${r.course}</td><td>${r.teacher}</td></tr>`;
+    }
+    if(rows.length===0) html += `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">Bu hafta ders bulunamadı.</td></tr>`;
+    html+='</tbody></table></div>';
+    container.innerHTML=html;
   }
 
   function renderCalendar2(){
-    if (location.hash !== '#dashboard') return;
-    if (DPSA_CAL_mode === 'week') renderWeek2(); else renderMonth2();
-    // toggle button style
-    const w = document.getElementById('modeWeek'), m = document.getElementById('modeMonth');
-    if(w && m){ w.classList.toggle('active', DPSA_CAL_mode==='week'); m.classList.toggle('active', DPSA_CAL_mode==='month'); }
+    if(location.hash!=='#dashboard') return;
+    if     (DPSA_CAL_mode==='week')  renderWeek2();
+    else if(DPSA_CAL_mode==='month') renderMonth2();
+    else                              renderList2();
+    const w=document.getElementById('modeWeek'), m=document.getElementById('modeMonth'), l=document.getElementById('modeList');
+    if(w) w.classList.toggle('active', DPSA_CAL_mode==='week');
+    if(m) m.classList.toggle('active', DPSA_CAL_mode==='month');
+    if(l) l.classList.toggle('active', DPSA_CAL_mode==='list');
   }
-
-  // Expose a safe render hook for the app
   window.dpsaCalRender = renderCalendar2;
 
-  // Controls
-  document.getElementById('modeWeek')?.addEventListener('click', () => { DPSA_CAL_mode='week'; renderCalendar2(); });
-  document.getElementById('modeMonth')?.addEventListener('click', () => { DPSA_CAL_mode='month'; renderCalendar2(); });
-  document.getElementById('calPrev')?.addEventListener('click', () => { DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?-7:-30)); renderCalendar2(); });
-  document.getElementById('calNext')?.addEventListener('click', () => { DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?+7:+30)); renderCalendar2(); });
-  document.getElementById('calToday')?.addEventListener('click', () => { DPSA_CAL_ref = new Date(); renderCalendar2(); });
+  document.getElementById('modeWeek') ?.addEventListener('click', ()=>{ DPSA_CAL_mode='week';  renderCalendar2(); });
+  document.getElementById('modeMonth')?.addEventListener('click', ()=>{ DPSA_CAL_mode='month'; renderCalendar2(); });
+  document.getElementById('modeList') ?.addEventListener('click', ()=>{ DPSA_CAL_mode='list';  renderCalendar2(); });
+  document.getElementById('calPrev')  ?.addEventListener('click', ()=>{ DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?-7:-30)); renderCalendar2(); });
+  document.getElementById('calNext')  ?.addEventListener('click', ()=>{ DPSA_CAL_ref.setDate(DPSA_CAL_ref.getDate() + (DPSA_CAL_mode==='week'?+7:+30)); renderCalendar2(); });
+  document.getElementById('calToday') ?.addEventListener('click', ()=>{ DPSA_CAL_ref=new Date(); renderCalendar2(); });
 
-  // Re-render on hash change and after app renders
-  window.addEventListener('hashchange', () => renderCalendar2());
-  if (window.renderAll){
-    const old = window.renderAll;
-    window.renderAll = function(){ old(); renderCalendar2(); };
-  }
-  // First render
-  setTimeout(renderCalendar2, 0);
-})(); // end IIFE
+  window.addEventListener('hashchange', renderCalendar2);
+  const _old = window.renderAll; window.renderAll = function(){ _old(); renderCalendar2(); };
+  setTimeout(renderCalendar2,0);
+})(); // end calendar
+// -------------------------------------------------------------
 
+renderAll();
 </script>
 </body>
 </html>
