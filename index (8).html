@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Müzik Okulu Yönetimi</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --card:#111827; /* gray-900 */
+      --muted:#334155; /* slate-700 */
+      --text:#e5e7eb; /* gray-200 */
+      --accent:#22d3ee; /* cyan-400 */
+      --accent-2:#38bdf8; /* sky-400 */
+      --danger:#ef4444; /* red-500 */
+      --ok:#10b981; /* emerald-500 */
+      --warn:#f59e0b; /* amber-500 */
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#0b1228);color:var(--text);font:500 15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    header{position:sticky;top:0;z-index:50;background:rgba(15,23,42,.85);backdrop-filter:blur(8px);border-bottom:1px solid #1f2937}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 180deg at 50% 50%,var(--accent),var(--accent-2),#6ee7b7,#ddd6fe,var(--accent));box-shadow:0 0 24px rgba(34,211,238,.35)}
+    nav{display:flex;flex-wrap:wrap;gap:8px}
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .tab{padding:8px 12px;border:1px solid #1f2937;border-radius:12px;background:#0b1224;cursor:pointer;transition:.2s}
+    .tab:hover{border-color:#334155}
+    .tab.active{background:linear-gradient(180deg,#111827,#0b1224);border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.25) inset}
+    .grid{display:grid;gap:14px}
+    .grid.stats{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    .card{background:linear-gradient(180deg,var(--card),#0a1020);border:1px solid #1f2937;border-radius:16px;padding:16px;box-shadow:0 6px 30px rgba(2,6,23,.4) inset}
+    .card h3{margin:0 0 6px 0;font-size:14px;color:#cbd5e1;font-weight:600}
+    .big{font-size:28px;font-weight:800;letter-spacing:.3px}
+    .muted{color:#94a3b8}
+    .row{display:flex;align-items:center;gap:10px}
+    .right{margin-left:auto}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #1f2937;background:#0b1224;border-radius:12px;padding:8px 12px;cursor:pointer;transition:.2s;font-weight:600}
+    .btn:hover{border-color:#334155}
+    .btn.primary{background:linear-gradient(180deg,#1e293b,#0b1224);border-color:#334155}
+    .btn.success{border-color:rgba(16,185,129,.35);background:linear-gradient(180deg,rgba(16,185,129,.15),#0b1224)}
+    .btn.warn{border-color:rgba(245,158,11,.35);background:linear-gradient(180deg,rgba(245,158,11,.15),#0b1224)}
+    .btn.danger{border-color:rgba(239,68,68,.35);background:linear-gradient(180deg,rgba(239,68,68,.15),#0b1224)}
+    .badge{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid #1f2937;font-size:12px}
+    .badge.ok{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.05);color:#bbf7d0}
+    .badge.no{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05);color:#fecaca}
+    .badge.neutral{border-color:#334155;color:#cbd5e1}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th,td{text-align:left;padding:10px 12px}
+    thead th{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
+    tbody tr{background:linear-gradient(180deg,#0b1224,#0a0f1e);border:1px solid #1f2937}
+    tbody tr td:first-child{border-radius:12px 0 0 12px}
+    tbody tr td:last-child{border-radius:0 12px 12px 0}
+    .pages{margin-top:18px}
+    .page{display:none}
+    .page.active{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:12px}
+    .search{display:flex;gap:8px;align-items:center}
+    input,select{background:#0b1224;color:#e5e7eb;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;outline:none;min-height:38px}
+    input:focus,select:focus{border-color:#334155;box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+    .accordion{border:1px solid #1f2937;border-radius:14px;background:#0b1224}
+    .acc-item+.acc-item{border-top:1px dashed #1f2937}
+    .acc-head{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer}
+    .acc-body{display:none;padding:12px;border-top:1px dashed #1f2937}
+    .acc-item.open .acc-body{display:block}
+    .acc-item.open .acc-head{background:linear-gradient(180deg,#0e162e,#0b1224)}
+    .hint{font-size:12px;color:#94a3b8}
+    .pill{padding:4px 8px;border-radius:999px;border:1px solid #1f2937;font-size:12px;color:#cbd5e1}
+    .footer{margin-top:40px;color:#64748b;text-align:center;font-size:12px}
+    /* dialog modal */
+    dialog{border:1px solid #1f2937;border-radius:16px;padding:0;background:linear-gradient(180deg,#111827,#0b1224);color:var(--text);width:min(640px,92vw)}
+    dialog::backdrop{background:rgba(2,6,23,.65)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1f2937}
+    .modal-body{padding:16px}
+    .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .modal-grid .full{grid-column:1 / -1}
+    .kicker{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .danger-text{color:#fecaca}
+    .tiny{font-size:11px;color:#94a3b8}
+    .nowrap{white-space:nowrap}
+    .pay-ok{background:rgba(16,185,129,.08)}
+    .pay-no{background:rgba(239,68,68,.08)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container" style="display:flex;align-items:center;gap:16px;justify-content:space-between;padding:14px 0">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div style="font-weight:800;letter-spacing:.2px">Müzik Okulu Yönetimi</div>
+          <div class="tiny">Tek dosya • Tarayıcıda çalışır • Yerel kayıt (localStorage)</div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="exportBtn" class="btn" title="Verileri JSON olarak indir">Dışa Aktar</button>
+        <label class="btn" title="JSON içe aktar"><input id="importInput" type="file" accept="application/json" style="display:none">İçe Aktar</label>
+        <button id="resetBtn" class="btn danger" title="Tüm verileri sil">Verileri Sıfırla</button>
+      </div>
+    </div>
+    <div class="container">
+      <div class="tabs" id="tabs"></div>
+    </div>
+  </header>
+
+  <main class="container pages">
+    <!-- ANASAYFA -->
+    <section id="page-anasayfa" class="page active">
+      <div class="grid stats">
+        <div class="card"><h3>Toplam Öğrenci</h3><div class="big" id="statOgrenci">0</div></div>
+        <div class="card"><h3>Toplam Öğretmen</h3><div class="big" id="statOgretmen">0</div></div>
+        <div class="card"><h3>Yaklaşan Ders</h3><div class="big" id="statNextLesson">–</div><div class="hint" id="statNextLessonSub"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="row" style="margin-bottom:10px">
+          <h3 style="margin:0">Ders Listesi (öğrenci – öğretmen – branş – gün – saat)</h3>
+          <div class="right"></div>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Öğrenci</th>
+                <th>Öğretmen</th>
+                <th>Branş</th>
+                <th>Saat</th>
+              </tr>
+            </thead>
+            <tbody id="homeLessonsBody"></tbody>
+          </table>
+        </div>
+        <div class="tiny hint">Ders listesi, <span class="pill">Dersler</span> sayfasında yapılan öğrenci–branş–öğretmen eşleştirmelerinden oluşur.</div>
+      </div>
+    </section>
+
+    <!-- ÖĞRENCİLER -->
+    <section id="page-öğrenciler" class="page">
+      <div class="toolbar">
+        <div class="search">
+          <input type="search" id="ogrenciSearch" placeholder="Öğrenci ara..." />
+        </div>
+        <button class="btn success" id="btnYeniOgrenci">+ Öğrenci Yeni Kayıt</button>
+      </div>
+      <div class="accordion" id="ogrenciList"></div>
+    </section>
+
+    <!-- ÖĞRETMENLER -->
+    <section id="page-öğretmenler" class="page">
+      <div class="toolbar">
+        <div class="search">
+          <input type="search" id="ogretmenSearch" placeholder="Öğretmen ara..." />
+        </div>
+        <button class="btn success" id="btnYeniOgretmen">+ Öğretmen Yeni Kayıt</button>
+      </div>
+      <div class="card">
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Ad Soyad</th>
+                <th>Telefon</th>
+                <th>Branş</th>
+                <th>Hakediş %</th>
+                <th class="nowrap">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="ogretmenTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DERSLER -->
+    <section id="page-dersler" class="page">
+      <div class="toolbar">
+        <div class="search">
+          <input type="search" id="dersSearch" placeholder="Öğrenci/Öğretmen/Branş ara..." />
+        </div>
+        <button class="btn success" id="btnYeniDers">+ Yeni Ders Kayıt</button>
+      </div>
+      <div class="card">
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Saat</th>
+                <th>Öğrenci</th>
+                <th>Branş</th>
+                <th>Öğretmen</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="dersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRANŞLAR -->
+    <section id="page-branşlar" class="page">
+      <div class="toolbar">
+        <div class="search">
+          <input type="search" id="bransSearch" placeholder="Branş ara..." />
+        </div>
+        <button class="btn success" id="btnYeniBrans">+ Yeni Branş</button>
+      </div>
+      <div class="card">
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Branş Adı</th>
+                <th>Kayıtlı Öğrenci</th>
+                <th>Kayıtlı Öğretmen</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="bransTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÖDEMELER -->
+    <section id="page-ödemeler" class="page">
+      <div class="toolbar">
+        <div class="search" style="gap:6px">
+          <input type="month" id="odemeAy" />
+          <input type="search" id="odemeSearch" placeholder="Öğrenci/Branş ara..." />
+          <button id="odemeFilterBtn" class="btn">Filtrele</button>
+        </div>
+        <button class="btn success" id="btnYeniOdeme">+ Yeni Ödeme Ekle</button>
+      </div>
+      <div class="card">
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Öğrenci</th>
+                <th>Branş</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="odemeTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- HAKEDİŞLER -->
+    <section id="page-hakedişler" class="page">
+      <div class="toolbar">
+        <div class="search" style="gap:8px">
+          <input type="date" id="hakStart" />
+          <span class="muted">→</span>
+          <input type="date" id="hakEnd" />
+          <button id="hakCalc" class="btn">Hesapla</button>
+        </div>
+      </div>
+      <div id="hakAccordion" class="accordion"></div>
+      <div class="tiny hint" style="margin-top:8px">* Yalnızca <b>Ödendi</b> durumundaki ödemeler hesaplamaya dahil edilir. Ödeme, tarihine en yakın (aynı branş ve öğrenci) ders kaydındaki öğretmene eşleştirilir. Hakediş satırlarında <span class="badge ok">Ödendi</span>/<span class="badge no">Ödenmedi</span> butonları ile ödeme durumunu işaretleyebilirsiniz.</div>
+    </section>
+
+    <div class="footer">© <span id="year"></span> Müzik Okulu • Yerel kullanım için geliştirilmiştir</div>
+  </main>
+
+  <!-- MODALS -->
+  <dialog id="modalOgrenci">
+    <form method="dialog" id="formOgrenci">
+      <div class="modal-head"><strong id="ogrModalTitle">Öğrenci Yeni Kayıt</strong><button class="btn" value="cancel">Kapat</button></div>
+      <div class="modal-body modal-grid">
+        <label class="full">Ad Soyad<input required id="ogrAd" placeholder="Örn. Ayşe Yılmaz"></label>
+        <label>Telefon<input id="ogrTel" placeholder="05xx ..."></label>
+        <label>Veli Ad Soyad<input id="ogrVeli" placeholder="Örn. Mehmet Yılmaz"></label>
+        <label class="full">Branşı<select id="ogrBrans"></select></label>
+        <input type="hidden" id="ogrEditId">
+        <div class="full row" style="justify-content:flex-end;gap:8px">
+          <button class="btn" value="cancel">Vazgeç</button>
+          <button class="btn success" id="ogrSave" value="">Kaydet</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modalOgretmen">
+    <form method="dialog" id="formOgretmen">
+      <div class="modal-head"><strong id="ogrtModalTitle">Öğretmen Yeni Kayıt</strong><button class="btn" value="cancel">Kapat</button></div>
+      <div class="modal-body modal-grid">
+        <label class="full">Ad Soyad<input required id="ogrtnAd" placeholder="Örn. Ali Demir"></label>
+        <label>Telefon<input id="ogrtnTel" placeholder="05xx ..."></label>
+        <label>Branşı<select id="ogrtnBrans"></select></label>
+        <label>Hakediş %<input id="ogrtnPct" type="number" min="0" max="100" step="1" value="50"></label>
+        <input type="hidden" id="ogrtEditId">
+        <div class="full row" style="justify-content:flex-end;gap:8px">
+          <button class="btn" value="cancel">Vazgeç</button>
+          <button class="btn success" id="ogretmenSave" value="">Kaydet</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modalBrans">
+    <form method="dialog" id="formBrans">
+      <div class="modal-head"><strong id="bransModalTitle">Yeni Branş</strong><button class="btn" value="cancel">Kapat</button></div>
+      <div class="modal-body modal-grid">
+        <label class="full">Branş Adı<input required id="bransAd" placeholder="Örn. Piyano"></label>
+        <input type="hidden" id="bransEditId">
+        <div class="full row" style="justify-content:flex-end;gap:8px">
+          <button class="btn" value="cancel">Vazgeç</button>
+          <button class="btn success" id="bransSave" value="">Kaydet</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modalDers">
+    <form method="dialog" id="formDers">
+      <div class="modal-head"><strong id="dersModalTitle">Yeni Ders Kayıt</strong><button class="btn" value="cancel">Kapat</button></div>
+      <div class="modal-body modal-grid">
+        <label class="full">Öğrenci<select id="dersOgr"></select></label>
+        <label>Branş<select id="dersBrans"></select></label>
+        <label>Öğretmen<select id="dersOgretmen"></select></label>
+        <label>Tarih<input id="dersTarih" type="date"></label>
+        <label>Saat<input id="dersSaat" type="time" step="300"></label>
+        <input type="hidden" id="dersEditId">
+        <div class="full row" style="justify-content:flex-end;gap:8px">
+          <button class="btn" value="cancel">Vazgeç</button>
+          <button class="btn success" id="dersSave" value="">Kaydet</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modalOdeme">
+    <form method="dialog" id="formOdeme">
+      <div class="modal-head"><strong id="odemeModalTitle">Yeni Ödeme</strong><button class="btn" value="cancel">Kapat</button></div>
+      <div class="modal-body modal-grid">
+        <label class="full">Öğrenci<select id="odmOgr"></select></label>
+        <label class="full">Branş<select id="odmBrans"></select></label>
+        <label>Ödeme Tarihi<input id="odmTarih" type="date"></label>
+        <label>Tutar (₺)<input id="odmTutar" type="number" min="0" step="0.01" placeholder="0,00"></label>
+        <label class="full">Durum<select id="odmDurum"><option value="Ödendi">Ödendi</option><option value="Ödenmedi">Ödenmedi</option></select></label>
+        <input type="hidden" id="odemeEditId">
+        <div class="full row" style="justify-content:flex-end;gap:8px">
+          <button class="btn" value="cancel">Vazgeç</button>
+          <button class="btn success" id="odemeSave" value="">Kaydet</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  // ---------- Basit Depo (localStorage) ----------
+  const DB_KEY = 'muzik-okulu-db-v2';
+  const TL = new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:2});
+
+  const pages = ['anasayfa','öğrenciler','öğretmenler','dersler','branşlar','ödemeler','hakedişler'];
+
+  let db = { students:[], teachers:[], branches:[], lessons:[], payments:[], payoutMarks:[] };
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+  function save(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); renderAll(); }
+  function load(){ try{ const s = localStorage.getItem(DB_KEY); if(s){ db = JSON.parse(s); } }catch(e){ console.warn('Bozuk veri sıfırlandı'); db = {students:[],teachers:[],branches:[],lessons:[],payments:[],payoutMarks:[]}; }
+  }
+
+  // ---------- Yardımcılar ----------
+  const byId = id => document.getElementById(id);
+  function getBranch(id){ return db.branches.find(x=>x.id===id); }
+  function getStudent(id){ return db.students.find(x=>x.id===id); }
+  function getTeacher(id){ return db.teachers.find(x=>x.id===id); }
+  function brName(id){ return (getBranch(id)?.name)||'—'; }
+  function stName(id){ return (getStudent(id)?.name)||'—'; }
+  function tcName(id){ return (getTeacher(id)?.name)||'—'; }
+
+  const GUNLER = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  function fmtDate(d){ if(!d) return '—'; const dt=new Date(d); return dt.toLocaleDateString('tr-TR'); }
+  function fmtTime(t){ return t||'—'; }
+  function dayName(d){ if(!d) return '—'; const dt=new Date(d); return GUNLER[dt.getDay()]; }
+
+  function inMonth(d, ym){ if(!ym) return true; const dt=new Date(d); const [y,m] = ym.split('-').map(Number); return dt.getFullYear()===y && (dt.getMonth()+1)===m; }
+  function inRange(d, start, end){ const x=new Date(d).setHours(0,0,0,0); const s=start?new Date(start).setHours(0,0,0,0):null; const e=end?new Date(end).setHours(0,0,0,0):null; if(s && x<s) return false; if(e && x>e) return false; return true; }
+
+  function ensureRelations(){
+    db.lessons = db.lessons.filter(ls=> getStudent(ls.studentId) && getBranch(ls.branchId) && getTeacher(ls.teacherId));
+    db.payments = db.payments.filter(p=> getStudent(p.studentId) && getBranch(p.branchId));
+    db.payoutMarks = db.payoutMarks.filter(m=> db.payments.some(p=> p.id===m.paymentId) && getTeacher(m.teacherId));
+  }
+
+  // Ödemeyi öğretmene eşleştir (öğrenci+branş aynı, ödeme gününe en yakın/önceki ders)
+  function matchTeacherForPayment(p){
+    const related = db.lessons.filter(l=> l.studentId===p.studentId && l.branchId===p.branchId);
+    if(!related.length) return null;
+    const pd = new Date(p.date).getTime();
+    const before = related.filter(l=> new Date(l.date).getTime()<=pd).sort((a,b)=> new Date(b.date)-new Date(a.date));
+    if(before[0]) return before[0].teacherId;
+    const after = related.sort((a,b)=> Math.abs(new Date(a.date)-pd) - Math.abs(new Date(b.date)-pd));
+    return after[0]?.teacherId || null;
+  }
+
+  // payout mark helpers
+  function isPayoutPaid(teacherId, paymentId){ return db.payoutMarks.some(m=> m.teacherId===teacherId && m.paymentId===paymentId && m.paid); }
+  function setPayoutPaid(teacherId, paymentId, paid){
+    const i = db.payoutMarks.findIndex(m=> m.teacherId===teacherId && m.paymentId===paymentId);
+    if(i>-1){ db.payoutMarks[i].paid = paid; } else { db.payoutMarks.push({teacherId,paymentId,paid}); }
+    save();
+  }
+
+  // ---------- Sekmeler ----------
+  function buildTabs(){
+    const wrap = byId('tabs');
+    wrap.innerHTML = '';
+    pages.forEach(name=>{
+      const b=document.createElement('button');
+      b.className='tab'+(name==='anasayfa'?' active':'');
+      b.dataset.page = name;
+      b.textContent = name.charAt(0).toUpperCase()+name.slice(1);
+      b.onclick=()=>activate(name);
+      wrap.appendChild(b);
+    });
+  }
+  function activate(name){
+    document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.page===name));
+    document.querySelectorAll('.page').forEach(p=> p.classList.remove('active'));
+    byId('page-'+name).classList.add('active');
+    renderPage(name);
+  }
+
+  // ---------- Renderler ----------
+  function renderAll(){ ensureRelations(); renderStats(); renderHomeLessons(); renderOgrenciler(); renderOgretmenler(); renderBranslar(); renderDersler(); renderOdemeler(); renderHakedis(); }
+  function renderPage(name){
+    const map={
+      'anasayfa':()=>{renderStats();renderHomeLessons();},
+      'öğrenciler':renderOgrenciler,
+      'öğretmenler':renderOgretmenler,
+      'branşlar':renderBranslar,
+      'dersler':renderDersler,
+      'ödemeler':renderOdemeler,
+      'hakedişler':renderHakedis
+    }; (map[name]||(()=>{}))();
+  }
+
+  function renderStats(){
+    byId('statOgrenci').textContent = db.students.length;
+    byId('statOgretmen').textContent = db.teachers.length;
+    const future = db.lessons
+      .map(l=>({...l, dt:new Date(l.date+'T'+(l.time||'00:00'))}))
+      .filter(x=> !isNaN(x.dt) && x.dt>new Date())
+      .sort((a,b)=> a.dt-b.dt);
+    if(future[0]){
+      byId('statNextLesson').textContent = stName(future[0].studentId);
+      byId('statNextLessonSub').textContent = `${dayName(future[0].date)} • ${fmtDate(future[0].date)} • ${fmtTime(future[0].time)} • ${tcName(future[0].teacherId)} / ${brName(future[0].branchId)}`;
+    }else{
+      byId('statNextLesson').textContent='—';
+      byId('statNextLessonSub').textContent='Yakında ders bulunamadı';
+    }
+  }
+
+  function renderHomeLessons(){
+    const tb = byId('homeLessonsBody');
+    tb.innerHTML='';
+    const rows = db.lessons.slice().sort((a,b)=>{
+      const ad=new Date(a.date+'T'+(a.time||'00:00')); const bd=new Date(b.date+'T'+(b.time||'00:00'));
+      return ad-bd;
+    });
+    if(!rows.length){ tb.innerHTML = `<tr><td colspan="5" class="muted">Henüz ders kaydı yok.</td></tr>`; return; }
+    rows.forEach(l=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${fmtDate(l.date)} <span class="muted">(${dayName(l.date)})</span></td>
+        <td>${stName(l.studentId)}</td>
+        <td>${tcName(l.teacherId)}</td>
+        <td>${brName(l.branchId)}</td>
+        <td>${fmtTime(l.time)}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---- Öğrenciler (filtre + düzenle/sil + ödeme listeleri) ----
+  function renderOgrenciler(){
+    const list = byId('ogrenciList');
+    const q = byId('ogrenciSearch').value?.toLowerCase()||'';
+    const data = db.students.filter(s=> `${s.name} ${s.phone} ${s.parent} ${brName(s.branchId)}`.toLowerCase().includes(q));
+    list.innerHTML='';
+    if(!data.length){ list.innerHTML = `<div class='card'>Kayıt bulunamadı.</div>`; return; }
+    data.forEach(s=>{
+      const item=document.createElement('div'); item.className='acc-item';
+      item.innerHTML = `
+        <div class="acc-head" role="button">
+          <strong>${s.name}</strong>
+          <span class="pill">${brName(s.branchId)}</span>
+          <span class="muted">${s.phone||''}</span>
+          <span class="right tiny">Veli: ${s.parent||'—'}</span>
+        </div>
+        <div class="acc-body">
+          <div class="row" style="gap:8px;margin-bottom:8px">
+            <button class="btn" data-pay="${s.id}">+ Bu öğrenciye ödeme ekle</button>
+            <button class="btn" data-edit="${s.id}">Düzenle</button>
+            <button class="btn danger" data-del="${s.id}">Sil</button>
+          </div>
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+            <div class="card">
+              <h3>Ödenenler</h3>
+              <div id="paid-${s.id}"></div>
+            </div>
+            <div class="card">
+              <h3>Ödenmeyenler</h3>
+              <div id="unpaid-${s.id}"></div>
+            </div>
+          </div>
+        </div>`;
+      item.querySelector('.acc-head').onclick=()=> item.classList.toggle('open');
+      item.querySelector('[data-del]')?.addEventListener('click',()=>{
+        if(confirm('Öğrenciyi silmek istediğinize emin misiniz? İlgili ders ve ödemeler de silinir.')){
+          db.lessons = db.lessons.filter(l=> l.studentId!==s.id);
+          db.payments = db.payments.filter(p=> p.studentId!==s.id);
+          db.students = db.students.filter(x=> x.id!==s.id);
+          save();
+        }
+      });
+      item.querySelector('[data-pay]')?.addEventListener('click',()=> openOdemeModal({studentId:s.id}));
+      item.querySelector('[data-edit]')?.addEventListener('click',()=> openOgrenciModal(s));
+
+      list.appendChild(item);
+
+      const paidWrap = item.querySelector('#paid-'+s.id);
+      const unpWrap = item.querySelector('#unpaid-'+s.id);
+      const paid = db.payments.filter(p=> p.studentId===s.id && p.status==='Ödendi');
+      const unp  = db.payments.filter(p=> p.studentId===s.id && p.status==='Ödenmedi');
+      paidWrap.innerHTML = paid.length? paid.map(p=> `<div class='row'><span>${fmtDate(p.date)}</span><span class='pill'>${brName(p.branchId)}</span><span class='right'>${TL.format(p.amount||0)}</span></div>`).join('') : '<div class="muted tiny">Kayıt yok</div>';
+      unpWrap.innerHTML  = unp.length?  unp.map(p=> `<div class='row'><span>${fmtDate(p.date)}</span><span class='pill'>${brName(p.branchId)}</span><span class='right danger-text'>${TL.format(p.amount||0)}</span></div>`).join('') : '<div class="muted tiny">Kayıt yok</div>';
+    });
+  }
+
+  function renderOgretmenler(){
+    const tb = byId('ogretmenTbody'); tb.innerHTML='';
+    const q = byId('ogretmenSearch').value?.toLowerCase()||'';
+    const rows = db.teachers.filter(t=> `${t.name} ${t.phone} ${brName(t.branchId)}`.toLowerCase().includes(q));
+    if(!rows.length){ tb.innerHTML = `<tr><td colspan="5" class="muted">Kayıt bulunamadı.</td></tr>`; return; }
+    rows.forEach(t=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${t.name}</strong></td>
+        <td>${t.phone||'—'}</td>
+        <td>${brName(t.branchId)}</td>
+        <td>${t.percent||0}%</td>
+        <td class="row">
+          <button class="btn" data-edit>Düzenle</button>
+          <button class="btn danger" data-del>Sil</button>
+        </td>`;
+      tr.querySelector('[data-del]').onclick=()=>{
+        const used = db.lessons.some(l=> l.teacherId===t.id);
+        if(used){ alert('Bu öğretmen derslerde kullanılıyor. Önce dersleri siliniz.'); return; }
+        if(confirm('Öğretmeni silmek istiyor musunuz?')){ db.teachers = db.teachers.filter(x=>x.id!==t.id); save(); }
+      }
+      tr.querySelector('[data-edit]').onclick=()=> openOgretmenModal(t);
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderDersler(){
+    const tb = byId('dersTbody'); tb.innerHTML='';
+    const q = byId('dersSearch').value?.toLowerCase()||'';
+    const rows0 = db.lessons.slice().sort((a,b)=> new Date(a.date+'T'+(a.time||'00:00')) - new Date(b.date+'T'+(b.time||'00:00')));
+    const rows = rows0.filter(l=> `${stName(l.studentId)} ${tcName(l.teacherId)} ${brName(l.branchId)} ${fmtDate(l.date)} ${fmtTime(l.time)}`.toLowerCase().includes(q));
+    if(!rows.length){ tb.innerHTML = `<tr><td colspan="6" class="muted">Kayıt bulunamadı.</td></tr>`; return; }
+    rows.forEach(l=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${fmtDate(l.date)} <span class="muted">(${dayName(l.date)})</span></td>
+        <td>${fmtTime(l.time)}</td>
+        <td>${stName(l.studentId)}</td>
+        <td>${brName(l.branchId)}</td>
+        <td>${tcName(l.teacherId)}</td>
+        <td class="row"><button class="btn" data-edit>Düzenle</button><button class="btn danger" data-del>Sil</button></td>`;
+      tr.querySelector('[data-del]').onclick=()=>{
+        if(confirm('Ders kaydını silmek istiyor musunuz?')){
+          db.lessons = db.lessons.filter(x=> x.id!==l.id);
+          save();
+        }
+      }
+      tr.querySelector('[data-edit]').onclick=()=> openDersModal(l);
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderBranslar(){
+    const tb = byId('bransTbody'); tb.innerHTML='';
+    const q = byId('bransSearch').value?.toLowerCase()||'';
+    const rows = db.branches.filter(b=> b.name.toLowerCase().includes(q));
+    if(!rows.length){ tb.innerHTML = `<tr><td colspan="4" class="muted">Kayıt bulunamadı.</td></tr>`; return; }
+    rows.forEach(b=>{
+      const sc = db.students.filter(s=> s.branchId===b.id).length;
+      const tc = db.teachers.filter(t=> t.branchId===b.id).length;
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${b.name}</strong></td>
+        <td>${sc}</td>
+        <td>${tc}</td>
+        <td class="row"><button class="btn" data-edit>Düzenle</button><button class="btn danger" data-del>Sil</button></td>`;
+      tr.querySelector('[data-del]').onclick=()=>{
+        const used = db.students.some(s=> s.branchId===b.id) || db.teachers.some(t=> t.branchId===b.id) || db.lessons.some(l=> l.branchId===b.id) || db.payments.some(p=> p.branchId===b.id);
+        if(used){ alert('Bu branş ilişkili kayıtlar içeriyor. Önce ilişkili kayıtları kaldırın.'); return; }
+        if(confirm('Branşı silmek istiyor musunuz?')){ db.branches = db.branches.filter(x=>x.id!==b.id); save(); }
+      }
+      tr.querySelector('[data-edit]').onclick=()=> openBransModal(b);
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderOdemeler(){
+    const tb = byId('odemeTbody'); tb.innerHTML='';
+    const ym = byId('odemeAy').value || '';
+    const q = byId('odemeSearch').value?.toLowerCase()||'';
+    const rows = db.payments
+      .filter(p=> inMonth(p.date, ym))
+      .filter(p=> `${stName(p.studentId)} ${brName(p.branchId)} ${fmtDate(p.date)} ${TL.format(p.amount)}`.toLowerCase().includes(q))
+      .sort((a,b)=> new Date(a.date)-new Date(b.date));
+    if(!rows.length){ tb.innerHTML = `<tr><td colspan="6" class="muted">Filtreye uygun ödeme bulunamadı.</td></tr>`; return; }
+    rows.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${fmtDate(p.date)}</td>
+        <td>${stName(p.studentId)}</td>
+        <td>${brName(p.branchId)}</td>
+        <td>${TL.format(p.amount||0)}</td>
+        <td>${p.status==='Ödendi'?'<span class="badge ok">Ödendi</span>':'<span class="badge no">Ödenmedi</span>'}</td>
+        <td class="row">
+          <button class="btn" data-toggle>Durum</button>
+          <button class="btn" data-edit>Düzenle</button>
+          <button class="btn danger" data-del>Sil</button>
+        </td>`;
+      tr.querySelector('[data-toggle]').onclick=()=>{ p.status = (p.status==='Ödendi'?'Ödenmedi':'Ödendi'); save(); }
+      tr.querySelector('[data-edit]').onclick=()=> openOdemeModal({edit:p});
+      tr.querySelector('[data-del]').onclick=()=>{ if(confirm('Ödemeyi silmek istiyor musunuz?')){ db.payments = db.payments.filter(x=>x.id!==p.id); save(); } }
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---- Hakedişler (öğretmen listesi, tıklayınca detay + ödenme işaretleme) ----
+  function renderHakedis(){
+    const wrap = byId('hakAccordion'); wrap.innerHTML='';
+    const s = byId('hakStart').value; const e = byId('hakEnd').value;
+
+    // öğretmen başlıkları
+    const teachers = db.teachers.slice().sort((a,b)=> a.name.localeCompare(b.name,'tr'));
+    if(!teachers.length){ wrap.innerHTML = `<div class='card'>Öğretmen kaydı yok.</div>`; return; }
+
+    teachers.forEach(t=>{
+      const item=document.createElement('div'); item.className='acc-item';
+      // hesapla
+      const paid = db.payments.filter(p=> p.status==='Ödendi' && (!s || !e || inRange(p.date,s,e)));
+      const list=[]; let sum=0; let hakTop=0;
+      paid.forEach(p=>{ const tid=matchTeacherForPayment(p); if(tid===t.id){
+        const pay = Number(p.amount||0);
+        const pct = Number(t.percent||0);
+        const hak = pay * pct / 100;
+        sum += pay; hakTop += hak;
+        list.push({p, pay, pct, hak, paidMark:isPayoutPaid(t.id,p.id)});
+      }});
+
+      item.innerHTML = `
+        <div class="acc-head" role="button">
+          <strong>${t.name}</strong>
+          <span class="pill">${brName(t.branchId)}</span>
+          <span class="right">Toplam Tahsilat: <b>${TL.format(sum)}</b> • Hakediş: <b>${TL.format(hakTop)}</b> (${t.percent||0}%)</span>
+        </div>
+        <div class="acc-body">
+          ${list.length?`
+            <div class='card'>
+              <div style='overflow:auto'>
+                <table>
+                  <thead><tr>
+                    <th>Tarih</th><th>Öğrenci</th><th>Branş</th><th>Tutar</th><th>Hakediş</th><th>Durum</th>
+                  </tr></thead>
+                  <tbody>
+                    ${list.map(x=>`<tr class='${x.paidMark?'pay-ok':'pay-no'}'>
+                      <td>${fmtDate(x.p.date)}</td>
+                      <td>${stName(x.p.studentId)}</td>
+                      <td>${brName(x.p.branchId)}</td>
+                      <td>${TL.format(x.pay)}</td>
+                      <td>${TL.format(x.hak)}</td>
+                      <td>
+                        <button class='btn ${x.paidMark?'success':'warn'}' data-paymark='${t.id}::${x.p.id}'>${x.paidMark?'Ödendi':'Ödenmedi'}</button>
+                      </td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `: '<div class="muted tiny">Bu tarih aralığında eşleşen ödeme yok.</div>'}
+        </div>`;
+
+      // toggle body
+      item.querySelector('.acc-head').onclick=()=> item.classList.toggle('open');
+      wrap.appendChild(item);
+
+      // butonları bağla
+      item.querySelectorAll('[data-paymark]')?.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const [tid,pid]=btn.getAttribute('data-paymark').split('::');
+          const nowPaid = !isPayoutPaid(tid,pid);
+          setPayoutPaid(tid,pid,nowPaid);
+        });
+      });
+    });
+  }
+
+  // ---------- Modaller Aç/Kaydet ----------
+  function fillSelect(el, opts, value){ el.innerHTML = opts.map(o=> `<option value="${o.value}">${o.label}</option>`).join(''); if(value!==undefined) el.value=value; }
+
+  function openOgrenciModal(s=null){
+    fillSelect(byId('ogrBrans'), db.branches.map(b=>({value:b.id,label:b.name})), s?.branchId);
+    byId('ogrAd').value = s?.name||''; byId('ogrTel').value = s?.phone||''; byId('ogrVeli').value = s?.parent||'';
+    byId('ogrEditId').value = s?.id||'';
+    byId('ogrModalTitle').textContent = s? 'Öğrenci Düzenle' : 'Öğrenci Yeni Kayıt';
+    byId('modalOgrenci').showModal();
+  }
+  function openOgretmenModal(t=null){
+    fillSelect(byId('ogrtnBrans'), db.branches.map(b=>({value:b.id,label:b.name})), t?.branchId);
+    byId('ogrtnAd').value=t?.name||''; byId('ogrtnTel').value=t?.phone||''; byId('ogrtnPct').value=t?.percent??50;
+    byId('ogrtEditId').value=t?.id||'';
+    byId('ogrtModalTitle').textContent = t? 'Öğretmen Düzenle' : 'Öğretmen Yeni Kayıt';
+    byId('modalOgretmen').showModal();
+  }
+  function openBransModal(b=null){
+    byId('bransAd').value=b?.name||''; byId('bransEditId').value=b?.id||'';
+    byId('bransModalTitle').textContent = b? 'Branş Düzenle' : 'Yeni Branş';
+    byId('modalBrans').showModal();
+  }
+
+  function openDersModal(l=null){
+    fillSelect(byId('dersOgr'), db.students.map(s=>({value:s.id,label:s.name})), l?.studentId);
+    fillSelect(byId('dersBrans'), db.branches.map(b=>({value:b.id,label:b.name})), l?.branchId);
+    function syncTeachers(){ const bid=byId('dersBrans').value; fillSelect(byId('dersOgretmen'), db.teachers.filter(t=> t.branchId===bid).map(t=>({value:t.id,label:t.name})), l?.teacherId); }
+    syncTeachers(); byId('dersBrans').onchange = syncTeachers;
+    byId('dersTarih').value = l?.date || (new Date().toISOString().slice(0,10));
+    byId('dersSaat').value = l?.time || '';
+    byId('dersEditId').value = l?.id||'';
+    byId('dersModalTitle').textContent = l? 'Ders Düzenle' : 'Yeni Ders Kayıt';
+    byId('modalDers').showModal();
+  }
+
+  function openOdemeModal(pref={}){
+    fillSelect(byId('odmOgr'), db.students.map(s=>({value:s.id,label:s.name})), pref.edit?.studentId || pref.studentId);
+    function syncBranchesForStudent(){
+      const s = getStudent(byId('odmOgr').value);
+      const ids = s?.branchId? [s.branchId] : db.branches.map(b=>b.id);
+      fillSelect(byId('odmBrans'), db.branches.filter(b=> ids.includes(b.id)).map(b=>({value:b.id,label:b.name})), pref.edit?.branchId);
+    }
+    byId('odmOgr').onchange=syncBranchesForStudent; syncBranchesForStudent();
+    byId('odmTarih').value = pref.edit?.date || (new Date().toISOString().slice(0,10));
+    byId('odmTutar').value = pref.edit?.amount ?? '';
+    byId('odmDurum').value = pref.edit?.status || 'Ödendi';
+    byId('odemeEditId').value = pref.edit?.id || '';
+    byId('odemeModalTitle').textContent = pref.edit? 'Ödeme Düzenle' : 'Yeni Ödeme';
+    byId('modalOdeme').showModal();
+  }
+
+  // Kaydet butonları (Ekle/Düzenle birleşik)
+  byId('ogrSave').onclick = (e)=>{ e.preventDefault();
+    const id = byId('ogrEditId').value; const name=byId('ogrAd').value?.trim(); if(!name){ alert('Ad Soyad zorunlu'); return; }
+    const s={ id: id||uid(), name, phone:byId('ogrTel').value?.trim(), parent:byId('ogrVeli').value?.trim(), branchId:byId('ogrBrans').value||null };
+    if(id){ const i=db.students.findIndex(x=>x.id===id); if(i>-1) db.students[i]=s; } else { db.students.push(s); }
+    save(); byId('modalOgrenci').close(); activate('öğrenciler'); };
+
+  byId('ogretmenSave').onclick=(e)=>{ e.preventDefault();
+    const id=byId('ogrtEditId').value; const name=byId('ogrtnAd').value?.trim(); if(!name){ alert('Ad Soyad zorunlu'); return; }
+    const t={ id: id||uid(), name, phone:byId('ogrtnTel').value?.trim(), branchId:byId('ogrtnBrans').value||null, percent:Number(byId('ogrtnPct').value||0) };
+    if(id){ const i=db.teachers.findIndex(x=>x.id===id); if(i>-1) db.teachers[i]=t; } else { db.teachers.push(t); }
+    save(); byId('modalOgretmen').close(); activate('öğretmenler'); };
+
+  byId('bransSave').onclick=(e)=>{ e.preventDefault();
+    const id=byId('bransEditId').value; const name=byId('bransAd').value?.trim(); if(!name){ alert('Branş adı zorunlu'); return; }
+    const b={ id:id||uid(), name };
+    if(id){ const i=db.branches.findIndex(x=>x.id===id); if(i>-1) db.branches[i]=b; } else { db.branches.push(b); }
+    save(); byId('modalBrans').close(); activate('branşlar'); };
+
+  byId('dersSave').onclick=(e)=>{ e.preventDefault();
+    const id=byId('dersEditId').value; const s=byId('dersOgr').value, b=byId('dersBrans').value, t=byId('dersOgretmen').value, d=byId('dersTarih').value, h=byId('dersSaat').value;
+    if(!s||!b||!t||!d){ alert('Öğrenci, branş, öğretmen ve tarih zorunludur.'); return; }
+    const tch=getTeacher(t); if(tch && tch.branchId!==b){ alert('Seçilen öğretmen bu branşta değil.'); return; }
+    const rec={id:id||uid(), studentId:s, branchId:b, teacherId:t, date:d, time:h};
+    if(id){ const i=db.lessons.findIndex(x=>x.id===id); if(i>-1) db.lessons[i]=rec; } else { db.lessons.push(rec); }
+    save(); byId('modalDers').close(); activate('dersler'); };
+
+  byId('odemeSave').onclick=(e)=>{ e.preventDefault();
+    const id=byId('odemeEditId').value; const s=byId('odmOgr').value, b=byId('odmBrans').value, d=byId('odmTarih').value, a=Number(byId('odmTutar').value||0), st=byId('odmDurum').value;
+    if(!s||!b||!d){ alert('Öğrenci, branş ve tarih zorunludur.'); return; }
+    const rec={id:id||uid(), studentId:s, branchId:b, date:d, amount:a, status:st};
+    if(id){ const i=db.payments.findIndex(x=>x.id===id); if(i>-1) db.payments[i]=rec; } else { db.payments.push(rec); }
+    save(); byId('modalOdeme').close(); activate('ödemeler'); };
+
+  // ---------- Olaylar & Başlat ----------
+  function wire(){
+    buildTabs();
+    byId('exportBtn').onclick=()=>{ const blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='muzik-okulu-veri.json'; a.click(); };
+    byId('importInput').onchange=(ev)=>{ const f=ev.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const j=JSON.parse(r.result); if(!j||!j.students) throw new Error('Biçim geçersiz'); db=j; save(); alert('Veriler içe aktarıldı.'); }catch(e){ alert('İçe aktarma hatası: '+e.message);} }; r.readAsText(f); };
+    byId('resetBtn').onclick=()=>{ if(confirm('Tüm veriler silinecek. Emin misiniz?')){ localStorage.removeItem(DB_KEY); db={students:[],teachers:[],branches:[],lessons:[],payments:[],payoutMarks:[]}; renderAll(); }};
+
+    byId('ogrenciSearch').oninput=renderOgrenciler;
+    byId('ogretmenSearch').oninput=renderOgretmenler;
+    byId('dersSearch').oninput=renderDersler;
+    byId('bransSearch').oninput=renderBranslar;
+    byId('odemeSearch').oninput=renderOdemeler;
+
+    byId('btnYeniOgrenci').onclick=()=>openOgrenciModal();
+    byId('btnYeniOgretmen').onclick=()=>openOgretmenModal();
+    byId('btnYeniBrans').onclick=()=>openBransModal();
+    byId('btnYeniDers').onclick=()=>openDersModal();
+    byId('btnYeniOdeme').onclick=()=>openOdemeModal();
+
+    byId('odemeFilterBtn').onclick=renderOdemeler;
+    byId('hakCalc').onclick=renderHakedis;
+
+    const now=new Date();
+    byId('odemeAy').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last  = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    byId('hakStart').valueAsDate = first;
+    byId('hakEnd').valueAsDate = last;
+    byId('year').textContent = new Date().getFullYear();
+  }
+
+  load();
+  wire();
+  renderAll();
+  </script>
+</body>
+</html>
